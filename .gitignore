@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Data & artifacts (NOT knowledge/ — that's tracked)
+/data/
+/artifacts/
+/logs/
+*.log
+
+# Eval output (keep input datasets, ignore run results)
+/eval/runs/
+/eval/reports/
+
+# Local DB dumps
+*.sqlite
+*.dump
+
+# Generated images (local dev; production uses object storage)
+/generated/
+
+# Local API smoke / bench outputs (do not publish)
+tmp_pack.json
+tmp_*.json
