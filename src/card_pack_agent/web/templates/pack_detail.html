@@ -236,8 +236,16 @@
     {% for c in pack.cards %}
     {% set pos = c.position %}
     {% set rendered = (data.rendered_images or {}).get(pos|string) or {} %}
+    {% set card_fb = feedback_summary.per_card.get(pos) %}
     <div class="card" id="card-{{ pos }}">
-      <div class="pos">#{{ pos }} · {{ c.segment }}</div>
+      <div class="pos">
+        #{{ pos }} · {{ c.segment }}
+        {% if card_fb and card_fb.event == "card_reject" %}
+          <span class="pill bad" title="{{ card_fb.reason or '' }}">rejected</span>
+        {% elif card_fb and card_fb.event == "card_approve" %}
+          <span class="pill good">approved</span>
+        {% endif %}
+      </div>
       <div class="hook">
         {% if c.text_overlay_hint %}{{ c.text_overlay_hint.content_suggestion or '(no overlay)' }}
         {% else %}(no overlay){% endif %}
@@ -258,6 +266,16 @@
         {% for p in providers %}
         <button onclick="genImage('{{ data.pack_id }}', {{ pos }}, '{{ p }}', this)">{{ p }}</button>
         {% endfor %}
+      </div>
+
+      <div class="card-review" style="margin-top: 8px; display: flex; gap: 6px; align-items: center;">
+        <button class="secondary" style="background: var(--bad); color: #fff;"
+                onclick="submitCardFeedback('{{ data.pack_id }}', {{ pos }}, 'card_reject', this)">✗ reject</button>
+        <button class="secondary" style="background: var(--good); color: #0f1115;"
+                onclick="submitCardFeedback('{{ data.pack_id }}', {{ pos }}, 'card_approve', this)">✓ ok</button>
+        {% if card_fb and card_fb.reason %}
+          <span class="small" style="color: var(--muted);">last: “{{ card_fb.reason[:60] }}”</span>
+        {% endif %}
       </div>
     </div>
     {% endfor %}
@@ -298,6 +316,58 @@
 </section>
 
 <script>
+async function submitPackFeedback(evt) {
+  evt.preventDefault();
+  const form = document.getElementById('fb-pack-form');
+  const btn = evt.submitter;
+  const eventName = btn.value;
+  const fd = new FormData(form);
+  fd.set('event', eventName);
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/feedback/pack/' + form.pack_id.value, { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!data.ok) {
+      alert('feedback failed: ' + (data.detail || JSON.stringify(data)));
+      return false;
+    }
+    window.location.reload();
+  } catch (e) {
+    alert('feedback error: ' + e);
+  } finally {
+    btn.disabled = false;
+  }
+  return false;
+}
+
+async function submitCardFeedback(packId, position, eventName, btn) {
+  let reason = '';
+  if (eventName === 'card_reject') {
+    reason = prompt('Why reject card #' + position + '? (optional)') || '';
+    if (reason === null) return;
+  }
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '…';
+  try {
+    const fd = new FormData();
+    fd.append('event', eventName);
+    fd.append('reason', reason);
+    const r = await fetch('/api/feedback/card/' + packId + '/' + position, { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!data.ok) {
+      alert('feedback failed: ' + (data.detail || JSON.stringify(data)));
+      return;
+    }
+    window.location.reload();
+  } catch (e) {
+    alert('feedback error: ' + e);
+  } finally {
+    btn.textContent = orig;
+    btn.disabled = false;
+  }
+}
+
 async function genImage(packId, position, provider, btn) {
   btn.disabled = true;
   const orig = btn.textContent;

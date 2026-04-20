@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import structlog
@@ -46,10 +47,17 @@ class VectorStore:
         if self._client is None:
             settings.require_real_mode("VectorStore")
             from qdrant_client import QdrantClient
-            self._client = QdrantClient(
-                url=settings.qdrant_url,
-                api_key=settings.qdrant_api_key or None,
-            )
+            if settings.qdrant_url and not settings.qdrant_url.startswith("http://localhost"):
+                # Remote Qdrant (prod)
+                self._client = QdrantClient(
+                    url=settings.qdrant_url,
+                    api_key=settings.qdrant_api_key or None,
+                )
+            else:
+                # Local file-based Qdrant (dev) — no server needed
+                local_path = str(Path(settings.knowledge_path).parent / "qdrant_data")
+                log.info("vector.using_local_storage", path=local_path)
+                self._client = QdrantClient(path=local_path)
         return self._client
 
     # --- Init ---
@@ -81,10 +89,16 @@ class VectorStore:
         if settings.is_mock:
             self._mock_store[collection].append((point_id, vector, payload))
             return
+        import uuid as _uuid
         from qdrant_client.models import PointStruct
+        # Local Qdrant requires UUID ids
+        try:
+            uid = _uuid.UUID(point_id)
+        except ValueError:
+            uid = _uuid.uuid5(_uuid.NAMESPACE_URL, point_id)
         self._real_client().upsert(
             collection_name=collection,
-            points=[PointStruct(id=point_id, vector=vector, payload=payload)],
+            points=[PointStruct(id=str(uid), vector=vector, payload=payload)],
         )
 
     # --- Search ---
