@@ -40,12 +40,42 @@ def _build_replicate() -> ImageProvider:
     return ReplicateProvider()
 
 
+def _build_seedream() -> ImageProvider:
+    from .providers.seedream import SeedreamProvider
+    return SeedreamProvider()
+
+
+def _build_flux_kontext_max() -> ImageProvider:
+    from .providers.flux_kontext import FluxKontextMaxProvider
+    return FluxKontextMaxProvider()
+
+
+def _build_midjourney() -> ImageProvider:
+    from .providers.midjourney import MidjourneyProvider
+    return MidjourneyProvider()
+
+
+def _build_jiekou_openai() -> ImageProvider:
+    from .providers.jiekou_openai import JiekouOpenAIProvider
+    return JiekouOpenAIProvider()
+
+
+def _build_gemini_flash_image_edit() -> ImageProvider:
+    from .providers.gemini_flash_image import GeminiFlashImageEditProvider
+    return GeminiFlashImageEditProvider()
+
+
 _BUILDERS: dict[ProviderName, Callable[[], ImageProvider]] = {
     ProviderName.MOCK: _build_mock,
     ProviderName.FLUX_PRO: _build_flux_pro,
     ProviderName.FLUX_SCHNELL: _build_flux_schnell,
     ProviderName.OPENAI_IMAGE: _build_openai_image,
     ProviderName.REPLICATE: _build_replicate,
+    ProviderName.SEEDREAM_V45: _build_seedream,
+    ProviderName.FLUX_KONTEXT_MAX: _build_flux_kontext_max,
+    ProviderName.MIDJOURNEY_TXT2IMG: _build_midjourney,
+    ProviderName.JIEKOU_OPENAI: _build_jiekou_openai,
+    ProviderName.GEMINI_FLASH_IMAGE_EDIT: _build_gemini_flash_image_edit,
 }
 
 

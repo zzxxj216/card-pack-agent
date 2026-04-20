@@ -15,54 +15,63 @@ from ..structured_output import CallMeta, structured_call
 log = structlog.get_logger()
 
 
-CARDS_SYSTEM_TEMPLATE = """你是卡贴 prompt 生成器。
+CARDS_SYSTEM_TEMPLATE = """You are a card-prompt generator for a TikTok card-pack system.
+
+The product targets an English-speaking overseas audience. All free-text fields
+(composition_note, text_overlay_hint.content_suggestion) must be written in
+English. The image `prompt` field is already English by convention.
 
 {global_style_guide}
 
 ---
 
-# 类目专属规则
+# Category playbook
 
 {category_playbook}
 
 ---
 
-# 视觉禁忌
+# Visual anti-patterns
 
 {anti_patterns}
 
 ---
 
-# 输出规则
+# Output rules
 
-- 输出必须是纯 JSON 数组，无 markdown fence、无前后解释文字
-- 每一项必须严格包含以下字段（不可新增、不可省略）：
+- Output a raw JSON array. No markdown fence, no prose before or after.
+- Each item must strictly contain these fields (no extras, no omissions):
 
 ```
 {{
   "position": 1,
   "segment": "hook",
-  "prompt": "film photography, 35mm, ... 完整英文 prompt",
+  "prompt": "film photography, 35mm, ... full English image prompt",
   "negative_prompt": "text, watermark, logo, typography, ...",
-  "composition_note": "中文构图说明",
+  "composition_note": "English composition note",
   "text_overlay_hint": {{
-    "content_suggestion": "卡贴上要叠加的文字内容",
+    "content_suggestion": "English overlay copy that will be composited on the card",
     "position": "top-center",
     "size_tier": "hook"
   }}
 }}
 ```
 
-关键约束：
-- position 必须严格匹配要求的范围
-- segment 只能是: hook, setup, development, turn, close
-- negative_prompt 必须包含 "text, watermark, logo, typography"
-- prompt 不得描述任何要出现在卡贴上的文字，必须是纯英文
-- 所有 prompt 必须包含 style_anchor 和 palette 颜色
-- text_overlay_hint 必须是对象（不是字符串），包含 content_suggestion、position、size_tier 三个字段
-- text_overlay_hint.position 可选值: top-center, top-left, bottom-center, center
-- text_overlay_hint.size_tier 可选值: hook, title, body, caption
-- 如果该卡不需要文字叠加，text_overlay_hint 设为 null
+Hard constraints:
+- `position` must match the requested range exactly
+- `segment` only allows: hook, setup, development, turn, close
+- `negative_prompt` must include "text, watermark, logo, typography"
+- `prompt` MUST NOT describe any text/letters/typography that should appear on
+  the card; overlay text is composited in post. Write prompts in English only.
+- Every `prompt` must include the `style_anchor` phrase and colors from the
+  locked palette
+- `text_overlay_hint` is an object (not a string) with exactly:
+  content_suggestion, position, size_tier
+- `text_overlay_hint.position` allows: top-center, top-left, bottom-center, center
+- `text_overlay_hint.size_tier` allows: hook, title, body, caption
+- `text_overlay_hint.content_suggestion` must be English, concise
+  (hook: <= 8 words; body: <= 14 words)
+- If a card has no overlay text, set `text_overlay_hint` to null
 """
 
 
@@ -70,25 +79,26 @@ BATCH_USER_TEMPLATE = """# Strategy Doc
 
 {strategy_doc_json}
 
-# 本批任务
+# Current batch
 
-为 position {range_start} 到 {range_end}（共 {n} 张）生成 card prompt。
+Generate card prompts for positions {range_start} to {range_end} ({n} cards total).
 
-这些卡贴属于 **{segment_role}** 段，请严格对照 strategy.structure 中该段的 notes。
+These cards belong to the **{segment_role}** segment. Follow the notes for that
+segment in strategy.structure.
 
-# 视觉锁定（所有卡必须共享）
+# Visual lock (shared across all cards in the pack)
 
 - style_anchor: `{style_anchor}`
 - palette: {palette}
-- main_subject 家族: {main_subject}
+- main_subject family: {main_subject}
 
-# 前面已生成卡贴的风格参考（前 3 张压缩信息，仅供对齐用）
+# Prior-batch style reference (last few cards, compressed; for alignment only)
 
 {prev_batch_summary}
 
-# 本批输出
+# Output for this batch
 
-严格 JSON array，{n} 个元素。
+Strict JSON array with exactly {n} items.
 """
 
 

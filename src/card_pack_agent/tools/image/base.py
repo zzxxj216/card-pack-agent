@@ -21,9 +21,16 @@ class ProviderName(str, Enum):
     MOCK = "mock"
     FLUX_PRO = "flux_pro"          # Black Forest Labs, via Replicate or fal.ai
     FLUX_SCHNELL = "flux_schnell"  # 快速/便宜版
-    OPENAI_IMAGE = "openai_image"  # gpt-image-1
+    OPENAI_IMAGE = "openai_image"  # gpt-image-1 (OpenAI direct)
     REPLICATE = "replicate"        # 通用 Replicate 模型 (SDXL / custom LoRA)
     STABILITY = "stability"        # Stability AI 直接 API
+    # jiekou.ai proxy endpoints
+    SEEDREAM_V45 = "seedream_v45"                    # /v3/seedream-4.5
+    FLUX_KONTEXT_MAX = "flux_kontext_max"            # /v3/async/flux-1-kontext-max
+    MIDJOURNEY_TXT2IMG = "midjourney_txt2img"        # /v3/async/mj-txt2img
+    JIEKOU_OPENAI = "jiekou_openai"                  # /v1/images/generations (OpenAI-compat via jiekou)
+    # Google direct
+    GEMINI_FLASH_IMAGE_EDIT = "gemini_flash_image_edit"  # /v3/gemini-3.1-flash-image-edit
 
 
 @dataclass

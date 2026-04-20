@@ -32,9 +32,10 @@ def test_knowledge_files_present():
 @pytest.mark.smoke
 def test_knowledge_loader():
     from card_pack_agent.memory import knowledge
-    assert "L1" in knowledge.taxonomy() or "内容域" in knowledge.taxonomy()
+    assert "L1" in knowledge.taxonomy()
     assert len(knowledge.global_anti_patterns()) > 100
-    assert "节日" in knowledge.for_category("festival")
+    # festival playbook must load and mention "festival" somewhere
+    assert "festival" in knowledge.for_category("festival").lower()
     assert knowledge.for_category("nonexistent").startswith("# Category")
 
 

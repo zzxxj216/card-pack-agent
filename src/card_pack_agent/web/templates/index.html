@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}packs — card-pack-agent eval{% endblock %}
+{% block content %}
+
+<section>
+  <h2>Generate new pack</h2>
+  <form action="/api/generate" method="post" class="form-row">
+    <div class="field" style="flex: 2; min-width: 320px;">
+      <label>topic</label>
+      <input type="text" name="topic" placeholder="e.g. Mother's Day — the things I never got to say" required />
+    </div>
+    <div class="field">
+      <label>L1 category</label>
+      <select name="category">
+        <option value="">(let planner decide)</option>
+        <option value="festival">festival</option>
+        <option value="emotional">emotional</option>
+        <option value="trending_event">trending_event</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>L2 mechanism</label>
+      <select name="mechanism">
+        <option value="">(let planner decide)</option>
+        <option value="resonance_healing">resonance_healing</option>
+        <option value="regret_sting">regret_sting</option>
+        <option value="blessing_ritual">blessing_ritual</option>
+        <option value="utility_share">utility_share</option>
+        <option value="contrast_twist">contrast_twist</option>
+        <option value="conflict_tension">conflict_tension</option>
+        <option value="aphorism_lesson">aphorism_lesson</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>
+        <input type="checkbox" name="generate_images" value="true" />
+        gen images inline
+      </label>
+    </div>
+    <button type="submit">generate</button>
+  </form>
+  <p class="small" style="margin-top: 10px;">
+    In dev mode this call is <strong>blocking</strong> for 3-7 minutes and costs ~$0.5-0.9.
+    The browser will hang. Check the terminal for progress logs.
+  </p>
+</section>
+
+<section>
+  <h2>Recent packs ({{ packs | length }})</h2>
+  {% if packs %}
+  <table>
+    <thead>
+      <tr>
+        <th>created</th>
+        <th>topic</th>
+        <th>L1 / L2</th>
+        <th>verdict</th>
+        <th>judge</th>
+        <th>cost</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in packs %}
+      <tr>
+        <td class="small">{{ p.created_at[:19] if p.created_at else "—" }}</td>
+        <td><a href="/packs/{{ p.pack_id }}">{{ p.topic or p.pack_id[:8] }}</a></td>
+        <td class="small">{{ p.hint_l1 or "—" }} / {{ p.hint_l2 or "—" }}</td>
+        <td>
+          {% if p.verdict == "pass" %}<span class="pill good">pass</span>
+          {% elif p.verdict %}<span class="pill bad">{{ p.verdict }}</span>
+          {% else %}<span class="pill">—</span>{% endif %}
+        </td>
+        <td class="small">
+          {% if p.overall_score is not none %}
+            {{ "%.2f"|format(p.overall_score) }}
+          {% else %}—{% endif %}
+        </td>
+        <td class="small">
+          {% if p.cost_usd is not none %}${{ "%.3f"|format(p.cost_usd) }}{% else %}—{% endif %}
+        </td>
+        <td class="small"><a href="/packs/{{ p.pack_id }}">→</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="small">
+    No packs yet. Generate one above, or
+    <a href="#" onclick="backfill(); return false;">backfill from <code>tmp_pack.json</code></a>
+    if you ran <code>scripts/generate_pack.py</code> before the UI existed.
+  </p>
+  {% endif %}
+</section>
+
+<script>
+async function backfill() {
+  const r = await fetch('/api/backfill', { method: 'POST' });
+  const data = await r.json();
+  if (data.ok) {
+    alert('Backfilled ' + data.pack_id);
+    location.reload();
+  } else {
+    alert('No backfill: ' + data.reason);
+  }
+}
+</script>
+
+{% endblock %}

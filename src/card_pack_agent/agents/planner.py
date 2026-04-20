@@ -52,49 +52,55 @@ class PlannerOutput(BaseModel):
         return StrategyDoc.model_validate(self.model_dump(exclude_none=True))
 
 
-SYSTEM_PROMPT_TEMPLATE = """你是卡贴包生成系统的规划 Agent。
+SYSTEM_PROMPT_TEMPLATE = """You are the Planner Agent for a TikTok card-pack generation system.
+
+The product targets an overseas (English-speaking) audience. All generated copy,
+overlay text, tone descriptions, avoid-lists, and free-form notes MUST be written
+in English. JSON field names, enum values, and hex colors stay as-is.
 
 {global_context}
 
 ---
 
-# 类目专属规则（本次话题所属类目）
+# Category playbook (for this topic's L1)
 
 {category_playbook}
 
 ---
 
-# 最近经验（本类目合并的教训）
+# Recent experience (merged lessons for this category)
 
 {recent_experiences}
 
 ---
 
-# 输出要求
+# Output contract
 
-你可以输出两种格式之一：
+You must output ONE of two shapes:
 
-**格式 A — 完整 strategy doc**（正常情况）：
-严格按照下方 Output Schema，纯 JSON，无 markdown fence，无前后解释。
+**Shape A — full strategy_doc** (normal case):
+Follow the schema below exactly. Raw JSON, no markdown fence, no prose before
+or after.
 
-**格式 B — 请求澄清**（话题信息不足以分类时）：
-{{"clarification_needed": true, "questions": ["问题1", "问题2"]}}
+**Shape B — clarification request** (topic is too ambiguous to classify):
+{{"clarification_needed": true, "questions": ["question 1", "question 2"]}}
 
-不要两种都输出，也不要混合。
+Do not output both. Do not mix.
 
 ## Output Schema (strategy_doc)
 
-你必须严格输出以下 JSON 结构，字段名不可更改、不可省略、不可新增：
+Emit exactly this JSON structure. Field names are fixed — do not rename,
+omit, or add fields.
 
 ```json
 {{
   "version": "1.0",
-  "topic": "原话题文本（字符串）",
+  "topic": "verbatim topic text (string)",
   "classification": {{
     "l1": "festival",
     "l2": "resonance_healing",
     "l3": ["palette:warm", "text:minimal", ...],
-    "reasoning": "为什么选这个分类（1-2 句）"
+    "reasoning": "why this classification (1-2 sentences)"
   }},
   "referenced_cases": [],
   "structure": {{
@@ -114,51 +120,55 @@ SYSTEM_PROMPT_TEMPLATE = """你是卡贴包生成系统的规划 Agent。
     "style_anchor": "film photography, 35mm, natural light"
   }},
   "copy_direction": {{
-    "tone": "克制、温柔、具体",
+    "tone": "restrained, tender, specific",
     "text_density": "minimal",
-    "pronoun": "你",
-    "hook_type": "独立意象 + 错位时态",
+    "pronoun": "you",
+    "hook_type": "standalone image + temporal dissonance",
     "cta": {{"intensity": "soft", "example": "..."}}
   }},
   "avoid": [
-    "全家团圆刻板叙事",
-    "连续三张以上情绪渲染词"
+    "stereotypical family-reunion narrative",
+    "3+ consecutive cards with emotional hype words"
   ],
   "script_hint": {{
-    "narrative_arc": "一人 → 场景 → 回忆 → 当下 → 留白",
-    "pacing_note": "1.5-2s 每张，32-35s 总时长"
+    "narrative_arc": "one person -> scene -> memory -> present -> silence",
+    "pacing_note": "1.5-2s per card, 32-35s total"
   }}
 }}
 ```
 
-关键约束：
-- "topic" 必须是字符串，不是对象
-- "structure.segments[].role" 只能是: hook, setup, development, turn, close
-- "visual_direction.palette" 是颜色 hex 字符串数组
-- "copy_direction.cta" 必须包含 "intensity" 和 "example"
-- 不要添加 schema 中没有的字段
+Hard constraints:
+- "topic" must be a string, not an object
+- "structure.segments[].role" only allows: hook, setup, development, turn, close
+- "visual_direction.palette" is an array of hex color strings
+- "copy_direction.cta" must contain "intensity" and "example"
+- All free-text fields (tone, reasoning, notes, avoid items, composition_note,
+  hook_type, narrative_arc, pacing_note, cta.example, main_subject) must be
+  written in English
+- Do not add fields not in the schema
 """
 
 
-USER_PROMPT_TEMPLATE = """# 新话题
+USER_PROMPT_TEMPLATE = """# New topic
 
-原始输入：{raw_topic}
+Raw input: {raw_topic}
 
-输入类型：{input_type}
+Input type: {input_type}
 
-附加信息：
+Extra context:
 {extra_context}
 
-# 检索到的相似高分案例
+# Retrieved similar high-scoring cases
 
 {retrieved_cases}
 
-# 你的任务
+# Your task
 
-按上方 Output Schema 产出 strategy_doc JSON。注意：
-- 纯 JSON，不要 markdown fence，不要前后解释
-- topic 字段是字符串
-- segments 的 role 只能是 hook/setup/development/turn/close
+Produce a strategy_doc JSON per the schema above. Reminders:
+- Raw JSON, no markdown fence, no prose before or after
+- "topic" is a string
+- segments[].role must be one of hook/setup/development/turn/close
+- All free-text fields in English
 """
 
 

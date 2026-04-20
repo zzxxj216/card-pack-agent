@@ -1,98 +1,140 @@
-# Global Anti-Patterns — 硬约束禁忌
+# Global Anti-Patterns — Hard constraints
 
-**优先级最高的文档**。Planner、Generator、Evaluator 全部必须加载此文件。触发任一条目 = 直接 FAIL，不进入人工审核。
-
----
-
-## 1. 平台合规（TikTok 内容政策映射）
-
-### 1.1 绝对禁止（触发 = 账号封禁风险）
-- 明确的自我伤害/自杀意象或方法描述
-- 未成年人的暴露、软色情或与成年人亲密接触的暗示
-- 仇恨言论：针对种族、宗教、性取向、残障的贬损
-- 暴力恐怖主义、极端组织符号
-- 非法商品买卖（毒品、武器、野生动物、盗版）
-- 血腥、人兽交、死亡尸体等生理不适内容
-
-### 1.2 高风险（触发 = 限流/下架）
-- 医疗诊断或治疗方案的明确断言（用"研究显示"不等于免责）
-- 具体金融投资建议（买/卖/持有某某）
-- 未经授权的明星肖像 + 商业暗示
-- 未经授权的品牌 logo 出现（除非本账号是该品牌）
-- 疫苗、疾病、政治议题的争议性立场表达
-- 危险行为的无警示演示（极限运动、自虐、危险食用）
+**Highest-priority document.** Loaded by Planner, Generator, and Evaluator.
+Triggering any hard rule here = immediate FAIL. No human-review override on
+hard-fail items; warn items get a nudge but don't block publishing.
 
 ---
 
-## 2. 版权红线
+## 1. Platform compliance (TikTok Community Guidelines mapping)
 
-- 禁止使用受版权保护的歌词、诗歌、小说原文
-- 禁止复刻他人卡贴包的视觉和文案结构（可借鉴机制，不可抄画面）
-- 禁止 AI 生成图像模仿在世艺术家的独特个人风格（可用已进入公有领域的风格）
-- 禁止使用他人真实照片（除非明确授权 / 公有领域 / 新闻事件公开照片且在合理使用范围）
+### 1.1 Absolutely prohibited (risk = account ban)
+- Explicit depiction or method description of self-harm or suicide
+- Minors in sexualized, suggestive, or intimate-with-adult contexts
+- Hate speech: slurs or dehumanizing claims targeting race, ethnicity,
+  religion, national origin, sexual orientation, gender identity, disability,
+  caste, immigration status, or serious disease
+- Terrorist / violent extremist organization symbols or propaganda
+- Illegal goods promotion (controlled substances, weapons, wildlife, pirated
+  goods)
+- Graphic gore, corpses, or content intended to shock / disgust
 
----
-
-## 3. 节日类专属禁忌
-
-### 3.1 敏感节日的立场回避
-以下日期相关话题**不做立场表达**，只做中性温情叙事或完全不做：
-- 清明（避免戏谑化、网红化死亡议题）
-- 国庆（避免政治符号化）
-- 南京大屠杀公祭日 / 918 / 12.13
-- 各地特定的纪念日
-
-### 3.2 节日叙事的"刻板偏差"
-避免以下过时/单一化叙事：
-- "全家团圆"作为默认家庭样本（忽略单身、离异、DINK、LGBTQ+ 观众）
-- 母亲节 = 只赞美牺牲奉献（强化刻板性别分工）
-- 春节 = 亲戚催婚的刻板段子（已过度使用）
-- 情人节 = 异性恋叙事为默认
-
-### 3.3 节日商业化的边界
-- 可以做节日送礼攻略（`utility_share` 机制），但不得暗示"不送 = 不爱"
-- 不做任何节日相关的"不转发不是 X" 情感绑架表达
+### 1.2 High risk (likely limited reach or takedown)
+- Explicit medical claims or treatment recommendations ("this cures...")
+- Specific financial advice ("buy / sell / hold X")
+- Unlicensed celebrity likeness used in a commercial context
+- Third-party brand logos appearing prominently (unless we are the brand)
+- Partisan political stances on elections / officeholders
+- Vaccine or public-health stance-taking (both directions)
+- Dangerous stunts without warnings (extreme sports, self-harming challenges,
+  unsafe food consumption)
 
 ---
 
-## 4. 文案禁忌
+## 2. Copyright
 
-### 4.1 直接违禁词（正则扫描）
-平台敏感词库维护在 `knowledge/_lexicon/banned_words.txt`（由 Evaluator 加载）。包含但不限于：
-- 自伤相关直接词（自杀、割腕、上吊、跳楼…）
-- 涉黄直接词
-- 涉政敏感词
-- 品牌黑名单（竞品、合作方要求屏蔽）
-
-### 4.2 结构性问题
-- 过度煽情：连续 3 张卡都在"泪目""心痛""破防""真的会哭" → 油腻
-- 信息绑架："不转不是中国人" "看完必须点赞"
-- 虚假承诺："看完必定脱单" "三天瘦十斤"
-- 过期梗：yyds / 绝绝子 / 我哭死 等疲劳表达（有时效性，每季度 review）
+- No verbatim copyrighted lyrics, poetry, or prose
+- No direct replication of another creator's card-pack visual + copy
+  structure (mechanisms may be borrowed; specific frames may not)
+- AI image generation must not imitate a living artist's distinctive
+  individual style; public-domain styles are fine
+- No use of real people's photographs unless explicitly licensed, public
+  domain, or newsworthy use under fair-use limits
 
 ---
 
-## 5. 视觉禁忌
+## 3. Festival / holiday category — specific taboos
 
-- 恐怖谷 AI 人像：多手指、面部畸变、眼神错位 → 必返工
-- 文字崩坏（AI 生图常见）：文字必须后期合成，不用 AI 直接生图里的文字
-- 单包内超过 3 张视觉重复（同场景、同构图、同主体） → 返工
-- 画面主体被 watermark / 平台 logo 遮挡
+### 3.1 Stance avoidance on sensitive dates
+
+Do not take or imply a stance on these dates; default to neutral-respectful
+or skip the topic entirely:
+
+- **September 11 (Patriot Day, US)** — no humor, no "reversal" mechanic
+- **Holocaust Remembrance Day (Jan 27 intl., Yom HaShoah)** — no dramatization
+- **Martin Luther King Jr. Day (US, 3rd Mon Jan)** — respect-required, no
+  brand-opportunistic CTAs
+- **Juneteenth (US, Jun 19)** — celebratory is fine; do not commercialize or
+  use as a generic summer-kickoff hook
+- **Memorial Day (US, last Mon May)** — somber framing only; never a "start
+  of summer" sale pitch
+- **Veterans Day (US, Nov 11) / Remembrance Day (UK/CA/AU/NZ, Nov 11)** —
+  respectful framing only
+- **Indigenous Peoples' Day / Thanksgiving (US, 4th Thu Nov)** —
+  acknowledge complexity; do not glorify colonial framings
+- **National days of mourning / major tragedies in any country** (school
+  shootings, natural disasters, public figure deaths) — skip unless
+  explicitly producing condolence content
+- **Religious observances** (Ramadan / Eid, Yom Kippur, Good Friday,
+  Vesak, Diwali, Hanukkah, etc.) — celebrate respectfully; do not
+  mock, parody, or frame one tradition as "better" than another
+
+### 3.2 Stereotyped narratives to avoid
+
+- "Whole family reunited" as the default family shape (erases single,
+  divorced, childfree, estranged, LGBTQ+, long-distance, immigrant-separated
+  audiences)
+- Mother's Day = praising only sacrifice / selfless suffering (reinforces
+  gendered-labor stereotypes)
+- Valentine's Day defaulting to heterosexual coupling
+- Father's Day leaning on "breadwinner / stoic provider" as the only
+  archetype
+- Christmas / New Year centering Western/Christian iconography as
+  universal (remember the audience includes non-Christian viewers)
+
+### 3.3 Commercial boundaries
+- Gift-guide (`utility_share`) content is fine, but do not imply "not gifting
+  = not loving"
+- No emotional-blackmail CTAs like "if you don't share this, you don't care"
 
 ---
 
-## 6. 品牌红线（本账号专属，待填）
+## 4. Copy
 
-> **运营方填写占位**，以下为模板：
+### 4.1 Direct banned-word regex
+Platform-sensitive terms tracked in
+`knowledge/_lexicon/banned_words.txt` (loaded by Evaluator). Includes at
+least:
+- Direct self-harm / suicide phrases
+- Sexual content direct phrases
+- Slurs / hate speech terms
+- Brand-blacklist (competitors, partners who require shielding)
+
+### 4.2 Structural issues
+- Over-saturation of emotion: 3+ consecutive cards using "crying", "tears",
+  "sobbing", "broken", "wrecked" = flagged as over-emotion
+- Social blackmail: "share this if you're a real [X]", "must like"
+- False promises: "watch this to guarantee X", "lose 10 lb in 3 days"
+- Stale memes (review quarterly): overuse of `no cap`, `slay queen`,
+  `it's giving`, `main character energy`, `living rent free`,
+  `understood the assignment`, `ate and left no crumbs`
+
+---
+
+## 5. Visual
+
+- Uncanny-valley AI people: extra fingers, facial distortion, mismatched eyes
+  — must reshoot
+- Broken AI-generated typography inside the image: all overlay text is
+  composited in post; never rely on AI models to render text inside the image
+- More than 3 near-duplicate cards (same scene, composition, subject) in
+  one pack = rework
+- Subject occluded by watermark or platform logo
+
+---
+
+## 6. Brand red lines (account-specific, ops to fill)
+
+> **Ops team fills this section.** Template:
 >
-> - 品牌色严格限定在 `#XXXXXX / #YYYYYY` 范围内
-> - 不得出现竞品：[待填]
-> - 主账号不做有偿推广内容（推广走副账号）
-> - 所有人物形象保持年龄 18+ 暗示
+> - Brand colors strictly limited to `#XXXXXX` / `#YYYYYY`
+> - Competitors to exclude: [TBD]
+> - This account does not run paid promotions (promos go on sub-account)
+> - All human figures must read as 18+
 
 ---
 
-## 7. Evaluator 检查清单（机器可执行）
+## 7. Evaluator checklist (machine-executable)
 
 ```yaml
 hard_fail:
@@ -105,16 +147,17 @@ hard_fail:
   - brand_red_line_violation
 
 warn:
-  - excessive_emotional_keywords  # "哭"类词 > 3 张
+  - excessive_emotional_keywords   # hype-word run > 3 cards
   - stale_meme_detected
-  - overclaim_phrasing           # "必定""一定""百分百"类
-  - stereotype_family_narrative  # 节日类专项
+  - overclaim_phrasing             # "must", "guaranteed", "100%"
+  - stereotype_family_narrative    # festival-specific
 ```
 
 ---
 
-## 变更记录
+## Changelog
 
-| 日期 | 版本 | 变更 |
+| Date | Version | Change |
 |---|---|---|
-| 2026-04-17 | v0.1 | 初版，覆盖平台、版权、节日专项、文案、视觉五类 |
+| 2026-04-17 | v0.1 | Initial CN version (platform, copyright, festival, copy, visual) |
+| 2026-04-19 | v0.2 | English rewrite; sensitive-dates list swapped to international (TikTok US / global) |

@@ -1,199 +1,232 @@
-# Category Playbook: Festival （节日类）
+# Category Playbook: Festival
 
 **L1**: `festival`
-**状态**：v0.1 — 零数据启动版本，所有规则基于同行观察和通用原则推导，尚未经本账号数据验证。
-**验证进度**：0 / 30 包
+**Status**: v0.2 — English rewrite. Zero-data cold start; every rule here is
+extrapolated from general principles and peer observation and is NOT yet
+validated on this account's data.
+**Validation progress**: 0 / 30 packs
 
 ---
 
-## 1. 判定边界
+## 1. Scope
 
-### 1.1 属于 festival
-- 以**节日/纪念日/日历特殊日**为叙事核心或时间锚点
-- 包含：
-  - 传统节日：春节、元宵、清明、端午、七夕、中秋、重阳、冬至
-  - 洋节：情人节、母亲节、父亲节、万圣节、感恩节、圣诞节
-  - 官方：国庆、劳动节、青年节、教师节
-  - 个人日历：生日、结婚纪念、忌日
-  - 季节转换：立春、冬至、新年第一天、除夕倒计时
+### 1.1 In scope
+- Packs anchored on a **holiday / anniversary / calendar-specific day**
+- Includes:
+  - **US federal & popular**: New Year's, Valentine's, Easter, Mother's Day,
+    Father's Day, Independence Day (July 4), Halloween, Thanksgiving,
+    Christmas
+  - **Global / cultural**: Lunar New Year, Diwali, Ramadan / Eid, Hanukkah,
+    Día de Muertos, Mardi Gras, St. Patrick's Day, Pride Month (June)
+  - **Respect-required** (treat with care — see anti-patterns): Juneteenth,
+    Veterans Day, Memorial Day, MLK Day, 9/11, Holocaust Remembrance,
+    Indigenous Peoples' Day
+  - **Personal calendar**: birthdays, anniversaries, "one year since..."
+  - **Season turns**: first day of spring, New Year's Eve countdown,
+    autumn arrival
 
-### 1.2 不属于（常见误归）
-- 节日期间发生的**具体新闻事件** → `trending_event`
-- 节日作为**背景场景**但核心是关系/情绪 → 按主导类目
-- "对抗节日焦虑"的方法论 → `knowledge` 或 `growth`
+### 1.2 Out of scope (common misclassifications)
+- A **specific news event** that happens during a holiday → `trending_event`
+- A holiday appearing as **background scene** while relationship or emotion
+  drives the narrative → go with the dominant L1
+- Anti-holiday-anxiety method / how-to → `knowledge` or `growth`
 
-### 1.3 边界讨论案例
-- "春节催婚的十个万能回复" → 表面是 festival，实际是 `knowledge` (utility) — **归 knowledge**
-- "今年中秋我一个人过" → festival（情感）— **归 festival**
-- "七夕当天微博热搜第一那个新闻" → `trending_event` — **不归 festival**
-
----
-
-## 2. 成功模式（基于通用规律，待数据验证）
-
-### 2.1 共鸣治愈型（`resonance_healing`）
-
-**适用场景**：家庭疏离、独处节日、成年人的节日钝感
-
-**视觉配方**：
-- 暖色主导：`#F5A623` 琥珀 / `#E8824A` 柔橙 / 低饱和米白
-- 单意象构图：一杯茶、一盏灯、一本旧书、一双筷子
-- 柔光、浅景深
-- 主体偏下或偏侧，上方大量留白给文字
-
-**文字配方**：
-- 主文字 24-36pt，一句话
-- 短句，不超过 20 字
-- 善用"你"而非"我们"
-- 避免 blessing 套话（"愿你""祝你"）
-
-**节奏**（50 张）：
-- 1-3: 孤立意象 + 一句戳人话（"今年你一个人吃饭吗"）
-- 4-15: 场景细节铺陈（那碗凉了的饭、没打开的红包...）
-- 16-30: 具体回忆/细节深入
-- 31-42: 小小转折（"但是..."/"其实..."）
-- 43-50: 温柔落地（不说教、不强升华）
-
-### 2.2 遗憾刺痛型（`regret_sting`）
-
-**适用场景**：清明、父亲节、母亲节、忌日、怀念长辈
-
-**视觉配方**：
-- 偏冷暖：`#D4A574` 旧相纸 / 褪色感
-- 空场景意象：空椅子、老房子、家的一角、未完成的物品
-- 避免出现"完整家庭"画面
-- 低对比度、胶片颗粒感
-
-**文字配方**：
-- 极简文字，一张一句话
-- 避免直说"离开""去世""走了"，用具体物：空椅子、没吃完的饭、挂着的衣服
-- 时态错位："他总说...""我以为..."
-
-**节奏**：
-- 1-3: 具体物件特写 + 错位时态钩子（"他的杯子还在用"）
-- 4-20: 细节展开
-- 21-40: 真相揭示段（可以更慢，留白多）
-- 41-50: 不升华，留白收尾（这类型忌强 CTA）
-
-### 2.3 祝福仪式型（`blessing_ritual`）
-
-**适用场景**：春节、生日、毕业、新年
-
-**视觉配方**：
-- 高饱和暖色：红、金、橘
-- 节日符号：灯笼、花、礼物、焰火（但避免俗套堆砌）
-- 可以用多人物/热闹场景，但主体清晰
-
-**文字配方**：
-- 可以用 blessing 套话但要具体化："愿你今年不再..." 比 "愿你一切安好" 好 10 倍
-- 结尾可以用稍长的 CTA
-
-**节奏**：
-- 1-3: 节日符号 + 温暖钩子
-- 4-30: 具体祝福分类（给家人、朋友、自己...）
-- 31-45: 情绪高点
-- 46-50: 结语 + CTA
-
-### 2.4 实用转发型（`utility_share`）
-
-**适用场景**：节日送礼、节日文案、节日穿搭、节日菜谱
-
-**视觉配方**：
-- 高对比、信息密集
-- 字幕驱动：大字 + 清单
-- 单张卡贴可以塞 3-5 个信息点
-- 工整、不追求美学留白
-
-**文字配方**：
-- 标题党可以：「15 个必看」「收藏这份」
-- 条目化、短句、有具体数字
-
-**节奏**（此型结构不同）：
-- 1-3: 痛点钩子（"今年送礼不用愁"）
-- 4-48: 清单主体（可以均匀，每张 1-2 个要点）
-- 49-50: 总结 + 强 CTA
-
-### 2.5 冲突张力型（`conflict_tension`）
-
-**适用场景**：节日 vs 现实的落差（没钱、没家、没爱人、加班）
-
-**视觉配方**：
-- 对比手法：节日符号 + 现实场景并置
-- 冷暖对比：暖色的"别人"、冷色的"而我"
-- 可以用分屏、对切、双重曝光
-
-**文字配方**：
-- "别人..." / "我..." 对仗
-- 不卖惨，保持幽默或冷静
-- 结尾留白或自嘲，不升华
-
-**节奏**：
-- 1-3: 钩子（反常识对比）
-- 4-30: 对比展开
-- 31-45: 可以转向和解或继续深化
-- 46-50: 开放收尾
-
-### 2.6 反差反转型（`contrast_twist`）
-
-**适用场景**：跨越铺垫再反转，适合大多数节日
-
-**视觉配方**：
-- 前半部分一种视觉语言，反转点明显切换
-- 反转卡要有视觉冲击
-
-**节奏**：
-- 1-25: 铺垫段（看似是 A 的叙事）
-- 26-30: 反转节点（最强一张）
-- 31-50: 新视角展开 + 收尾
-
-### 2.7 金句教训型（`aphorism_lesson`）
-
-**一般不推荐作为节日类主力机制**，容易显得说教。慎用，或作为辅助段落嵌入其他机制。
+### 1.3 Edge cases
+- "10 comebacks for when relatives pry on Thanksgiving" → surface-looks
+  festival, but it's a **utility / `knowledge`** pack — classify as `knowledge`
+- "Spending Christmas alone for the first time" → festival (emotion anchor) →
+  `festival`
+- "The Super Bowl halftime show last night" → `trending_event`, not festival
 
 ---
 
-## 3. 禁忌（节日类专属）
+## 2. Success patterns (principle-derived, unvalidated)
 
-1. **禁止"全家团圆"作为默认家庭样本** — 见 `global_anti_patterns.md §3.2`
-2. **禁止"不转发不是 XX 人"** 类情感绑架
-3. **避免过度煽情**：连续 3 张以上 "泪目/哭死/破防" 类词 → 必返工
-4. **清明、公祭日等严肃节日不用幽默/反转机制**
-5. **节日送礼类不得暗示"不送=不爱"**
-6. **避免已过饱和的开头**：
-   - "在这个特别的日子里..."
-   - "每到XX，我就会想起..."
-   - "XX 节快乐！"（直白的节日快乐已经疲劳）
+### 2.1 Resonance + healing (`resonance_healing`)
+
+**When to use**: family distance, solo holidays, the adult dullness around
+holidays
+
+**Visual recipe**:
+- Warm-led palette: `#F5A623` amber / `#E8824A` soft coral / low-sat cream
+- Single-object composition: a mug, a lamp, a worn book, a solo chopstick
+  set, a leftover slice
+- Soft light, shallow depth of field
+- Subject placed low or to one side; lots of negative space above for overlay
+
+**Copy recipe**:
+- Main overlay 24-36pt, one sentence
+- Short: hook <= 8 English words; body <= 12
+- Prefer "you" over "we"
+- Avoid blessing cliches ("may you...", "wishing you...")
+
+**Pacing (50 cards)**:
+- 1-3: isolated object + piercing one-liner
+  ("are you eating dinner alone this year")
+- 4-15: scene details (the plate wrapped in foil, the unopened card)
+- 16-30: concrete memory / detail deep-dives
+- 31-42: a small turn ("but...", "still...")
+- 43-50: gentle landing (no lecture, no forced uplift)
+
+### 2.2 Regret sting (`regret_sting`)
+
+**When to use**: Mother's / Father's Day, anniversary of a loss, remembering
+elders, first holiday without someone
+
+**Visual recipe**:
+- Aged-warm: `#D4A574` old photo / washed-out film look
+- Empty-scene objects: an empty chair, an old home corner, an unfinished
+  project
+- Avoid any "complete-family" frame
+- Low contrast, film grain
+
+**Copy recipe**:
+- Extreme minimalism, one line per card
+- Avoid naming "died / passed / gone"; use the object: the empty chair, the
+  uneaten plate, the coat still hanging
+- Temporal dissonance: "he always said...", "I thought..."
+
+**Pacing**:
+- 1-3: specific-object close-up + dissonant-tense hook
+  ("his mug is still in rotation")
+- 4-20: detail expansion
+- 21-40: reveal section — slowest beat, most negative space
+- 41-50: no forced uplift; quiet close (avoid hard CTAs on this mechanism)
+
+### 2.3 Blessing / ritual (`blessing_ritual`)
+
+**When to use**: New Year's, birthdays, graduation, welcome-to-a-new-year
+
+**Visual recipe**:
+- Saturated warm palette: red, gold, coral
+- Festival symbols: lights, flowers, gifts, fireworks (avoid kitsch overload)
+- Multi-person / crowd scenes are allowed; keep the subject clear
+
+**Copy recipe**:
+- Blessings are allowed but must be specific: "may this be the year you stop
+  apologizing for existing" beats "may your year be bright" 10x
+- A slightly longer CTA is acceptable at the close
+
+**Pacing**:
+- 1-3: festival symbol + warm hook
+- 4-30: specific blessings grouped (for family / friends / yourself...)
+- 31-45: emotional peak
+- 46-50: closer + CTA
+
+### 2.4 Utility share (`utility_share`)
+
+**When to use**: holiday gift guides, holiday outfit lists, holiday recipes
+
+**Visual recipe**:
+- High contrast, information-dense
+- Type-driven: large headline + bullet list
+- A single card can carry 3-5 info points
+- Clean and grid-like; no negative-space aesthetics
+
+**Copy recipe**:
+- Listicle headers are fine: "15 to save", "the only list you need"
+- Bulleted, short, specific numbers
+
+**Pacing (structure differs from emotional packs)**:
+- 1-3: pain-point hook ("stop panic-buying gifts")
+- 4-48: list body (even cadence; each card carries 1-2 points)
+- 49-50: summary + hard CTA
+
+### 2.5 Conflict tension (`conflict_tension`)
+
+**When to use**: festival vs reality gap (no money, no home, no partner,
+still-at-work, estranged-family)
+
+**Visual recipe**:
+- Contrast framing: festival symbol + reality scene juxtaposed
+- Warm / cool split: warm "them" vs cool "me"
+- Split-screen, cut-over, or double-exposure allowed
+
+**Copy recipe**:
+- Parallel phrasing: "everyone else..." / "meanwhile, me..."
+- Don't self-pity; keep it dry or wry
+- Close in silence or with a self-aware joke; no forced uplift
+
+**Pacing**:
+- 1-3: hook (counter-intuitive contrast)
+- 4-30: contrast unfolds
+- 31-45: can pivot toward reconciliation or deepen the contrast
+- 46-50: open ending
+
+### 2.6 Contrast twist (`contrast_twist`)
+
+**When to use**: works for most holidays — set up an expectation, then flip
+
+**Visual recipe**:
+- Visual language A for the first half; hard switch at the reversal card
+- The reversal card should be the strongest visual hit
+
+**Pacing**:
+- 1-25: setup (seems to be an A story)
+- 26-30: reversal node (the strongest single card)
+- 31-50: new perspective unfolds + close
+
+### 2.7 Aphorism / lesson (`aphorism_lesson`)
+
+**Generally NOT recommended** as the primary mechanism for festival packs —
+skews preachy. Use sparingly, or embed a short aphorism as a supporting beat
+inside another mechanism.
 
 ---
 
-## 4. 推荐 Prompt 模板
+## 3. Festival-specific taboos
 
-主 prompt 模板位于：
-- `prompt_templates/generator_cards.v1.md` §festival
-- `prompt_templates/generator_script.v1.md` §festival
-
-每次更新本文件后，必须同步 review 对应 section。
-
----
-
-## 5. 未决问题（等数据回答）
-
-- [ ] 哪种机制在本账号粉丝群里表现最好？预测 `resonance_healing` > `regret_sting` > 其他，**待 30 包数据验证**
-- [ ] 暖色 vs 冷色的实际完播差异有多大？
-- [ ] "单意象 vs 多人物"在节日类的效果对比
-- [ ] 最佳开头钩子是"问句""独立意象"还是"反差陈述"
-- [ ] 文字密度（text:minimal vs text:medium）对不同机制的影响
+1. **No "whole family reunited" as the default family sample** — see
+   `global_anti_patterns.md §3.2`
+2. **No "share or you don't care" guilt framing**
+3. **Over-emotion ceiling**: 3+ consecutive cards with "cry", "tears",
+   "sobbing", "broken", "devastated", "wrecked" → flagged and reworked
+4. **Respect-required days** (Memorial Day, Veterans Day, 9/11, MLK Day,
+   Holocaust Remembrance, Juneteenth) — no humor / twist / sale CTAs
+5. **Gift-guide packs** must not imply "not gifting = not loving"
+6. **Saturated openers to avoid**:
+   - "On this special day..."
+   - "Every [holiday], I think about..."
+   - "Happy [holiday]!" as a standalone hook (too flat)
+   - "Sending love to everyone who..." (fatigued)
 
 ---
 
-## 6. 历史经验（来自 experience_log 合并，初始为空）
+## 4. Related prompt templates
 
-_（本节由人工每周从 `experience_log/` 合并而来，当前为空。）_
+The human-reference templates live at:
+- `prompt_templates/generator_cards.v1.md`
+- `prompt_templates/generator_script.v1.md`
+
+Note: these `.md` files are for humans. The actual prompts the LLM sees are
+hard-coded in `src/card_pack_agent/agents/*.py` — any playbook change must be
+reflected in the agent code (see CLAUDE.md §3.1).
 
 ---
 
-## 变更记录
+## 5. Open questions (to be answered by data)
 
-| 日期 | 版本 | 变更 |
+- [ ] Which mechanism performs best for this account's audience? Current
+      hypothesis: `resonance_healing` > `regret_sting` > others — pending
+      30-pack validation.
+- [ ] Warm vs cool palette — actual completion-rate delta?
+- [ ] Single-object vs multi-person subjects — festival-category impact?
+- [ ] Best hook form: question / standalone-image / counter-framing?
+- [ ] Text density (`text:minimal` vs `text:medium`) across mechanisms?
+- [ ] Do culturally-rooted festivals (Diwali, Lunar New Year) need
+      audience-specific copy registers?
+
+---
+
+## 6. Historical experience (merged from `experience_log`, empty for now)
+
+_This section is merged manually from `experience_log/` weekly. Currently empty._
+
+---
+
+## Changelog
+
+| Date | Version | Change |
 |---|---|---|
-| 2026-04-17 | v0.1 | 初版（零数据启动） |
+| 2026-04-17 | v0.1 | Initial CN version (zero-data cold start) |
+| 2026-04-19 | v0.2 | Full English rewrite; festival scope expanded to US / global / cultural / respect-required |

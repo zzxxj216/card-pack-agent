@@ -87,7 +87,7 @@ class KnowledgeLoader:
         """
         logs = self.list_experience_logs()[-max_files:]
         if not logs:
-            return "(暂无已合并的经验记录)"
+            return "(no experience logs merged yet)"
         return "\n\n---\n\n".join(p.read_text(encoding="utf-8") for p in logs)
 
     # --- Write (only to experience_log/) ---

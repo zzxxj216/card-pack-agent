@@ -36,10 +36,18 @@ REQUIRED_PROMPT_TEMPLATES = [
     r"^reviewer\.v\d+\.md$",
 ]
 
-CATEGORY_REQUIRED_SECTIONS = [
-    "## 1. 判定边界",
-    "## 2. 成功模式",
-    "## 3. 禁忌",
+# Section titles are matched as substrings (after the leading "## N. "), so
+# playbooks may number sections however they like as long as the headings
+# are present.
+CATEGORY_REQUIRED_SECTION_TITLES = [
+    "Scope",
+    "Success patterns",
+]
+
+CATEGORY_TABOO_MARKERS = [
+    "-specific taboos",
+    "Mechanisms to avoid",
+    "taboos",
 ]
 
 
@@ -91,11 +99,21 @@ def check_categories() -> list[str]:
         errors.append("no category playbook found")
         return errors
 
+    heading_re = re.compile(r"^##\s+[\w\.]+\s+(.+?)\s*$", re.MULTILINE)
     for cat_file in categories:
         content = cat_file.read_text(encoding="utf-8")
-        missing = [s for s in CATEGORY_REQUIRED_SECTIONS if s not in content]
+        headings = heading_re.findall(content)
+        missing = [
+            title for title in CATEGORY_REQUIRED_SECTION_TITLES
+            if not any(title in h for h in headings)
+        ]
         if missing:
             errors.append(f"{cat_file.name} missing sections: {missing}")
+        # Each playbook must contain some taboo / anti-pattern section
+        if not any(marker in content for marker in CATEGORY_TABOO_MARKERS):
+            errors.append(
+                f"{cat_file.name} missing a taboos / anti-patterns section"
+            )
     return errors
 
 

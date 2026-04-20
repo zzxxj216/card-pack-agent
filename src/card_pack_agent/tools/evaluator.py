@@ -27,12 +27,36 @@ log = structlog.get_logger()
 # --- Rule-based checks ---
 
 # Placeholder banned words. Production list lives in knowledge/_lexicon/banned_words.txt.
+# Target: TikTok US / global English community-guideline hot buttons.
+# Matched case-insensitively as whole-word-ish substrings (see check_banned_words).
+# Legacy CN entries retained until bilingual seed data is retired.
 _DEFAULT_BANNED_WORDS = [
+    # Self-harm / suicide direct references (hard fail)
+    "suicide", "kill myself", "kms", "end my life",
+    "self-harm", "self harm", "cutting myself",
+    # Sexual content involving minors proxies
+    "underage",
+    # Hate / slurs proxies (extend via lexicon file)
+    # Medical / financial overclaim triggers
+    "guaranteed cure", "miracle cure",
+    # Legacy CN entries — keep until bilingual seeds drop
     "自杀", "自残", "割腕", "跳楼", "上吊",
-    # ... extend via lexicon file
 ]
 
-_STALE_MEMES = ["yyds", "绝绝子", "我哭死", "破防了"]  # time-sensitive, review quarterly
+# Stale / overused English meme expressions. Review QUARTERLY — this decays fast.
+# Rule of thumb: add a term when it feels cringe-by-overuse, not when it's just
+# informal. Examples kept conservative — quality-check before expanding.
+_STALE_MEMES = [
+    "no cap",
+    "slay queen",
+    "it's giving",
+    "main character energy",
+    "living rent free",
+    "understood the assignment",
+    "ate and left no crumbs",
+    # Legacy CN entries
+    "yyds", "绝绝子", "我哭死", "破防了",
+]
 
 
 def _load_banned_words() -> list[str]:
@@ -43,13 +67,17 @@ def _load_banned_words() -> list[str]:
 
 
 def check_banned_words(pack: Pack) -> list[EvaluatorIssue]:
-    """扫卡贴 text_overlay_hint 和 script shots 的 text_overlay.content。"""
-    banned = _load_banned_words()
+    """Scan card text_overlay_hint and script shot text_overlay.content.
+
+    Case-insensitive substring match. English banned phrases need this so
+    `Suicide` and `suicide` both hit; CN characters are unchanged by casefold.
+    """
+    banned = [w.casefold() for w in _load_banned_words()]
     issues: list[EvaluatorIssue] = []
 
     for card in pack.cards:
         if card.text_overlay_hint:
-            content = card.text_overlay_hint.content_suggestion
+            content = card.text_overlay_hint.content_suggestion.casefold()
             for w in banned:
                 if w in content:
                     issues.append(EvaluatorIssue(
@@ -61,8 +89,9 @@ def check_banned_words(pack: Pack) -> list[EvaluatorIssue]:
 
     for shot in pack.script.shots:
         if shot.text_overlay:
+            content = shot.text_overlay.content.casefold()
             for w in banned:
-                if w in shot.text_overlay.content:
+                if w in content:
                     issues.append(EvaluatorIssue(
                         code="banned_word_detected",
                         severity=EvaluatorVerdict.FAIL,
@@ -126,10 +155,12 @@ def check_visual_duplication(pack: Pack, max_near_duplicates: int = 3) -> list[E
 
 def check_stale_memes(pack: Pack) -> list[EvaluatorIssue]:
     issues = []
+    memes = [m.casefold() for m in _STALE_MEMES]
     for shot in pack.script.shots:
         if shot.text_overlay:
-            for meme in _STALE_MEMES:
-                if meme in shot.text_overlay.content:
+            content = shot.text_overlay.content.casefold()
+            for meme in memes:
+                if meme in content:
                     issues.append(EvaluatorIssue(
                         code="stale_meme_detected",
                         severity=EvaluatorVerdict.WARN,
@@ -140,12 +171,23 @@ def check_stale_memes(pack: Pack) -> list[EvaluatorIssue]:
 
 
 def check_emotional_keyword_saturation(pack: Pack, window: int = 3) -> list[EvaluatorIssue]:
-    """连续 window 张出现"哭/泪/破防"类词 → warn."""
-    emo_words = ["哭", "泪", "破防", "狠狠", "心痛"]
+    """Warn when `window` consecutive cards carry emotion-hype words.
+
+    Bilingual lexicon: English hype verbs + legacy CN words. Substring match,
+    case-insensitive. Tune quarterly as meme fatigue shifts.
+    """
+    emo_words = [
+        # English hype / emotional saturation words
+        "cry", "crying", "tears", "sobbing", "broken",
+        "devastated", "wrecked", "bawling", "weeping",
+        # Legacy CN
+        "哭", "泪", "破防", "狠狠", "心痛",
+    ]
     hit_positions: list[int] = []
     for card in pack.cards:
         if card.text_overlay_hint:
-            if any(w in card.text_overlay_hint.content_suggestion for w in emo_words):
+            content = card.text_overlay_hint.content_suggestion.casefold()
+            if any(w.casefold() in content for w in emo_words):
                 hit_positions.append(card.position)
     # detect runs of length >= window
     issues = []
@@ -178,20 +220,22 @@ def _consecutive_runs(positions: list[int]) -> list[list[int]]:
 
 # --- LLM judge ---
 
-JUDGE_SYSTEM = """你是卡贴包质量评判 Agent。接收一个生成完的 pack（strategy + cards + script），给出 1-5 打分。
+JUDGE_SYSTEM = """You are the Judge Agent for card-pack quality. You receive a fully generated
+pack (strategy + cards + script) targeting an English-speaking overseas
+audience, and you score it 1-5 on each dimension.
 
-评分维度（每项 1-5）：
-- style_consistency: 50 张视觉风格是否一致
-- structural_integrity: 是否遵守 strategy 的 segment 结构
-- rule_adherence: 是否遵守 category playbook
-- anti_pattern_clean: 是否规避 anti_patterns
-- internal_dedup: 视觉/文案是否过度重复
+Scoring dimensions (each 1-5, one decimal place allowed):
+- style_consistency: is the visual style coherent across all cards
+- structural_integrity: does the pack follow the strategy's segment structure
+- rule_adherence: does it follow the category playbook
+- anti_pattern_clean: does it avoid the listed anti-patterns
+- internal_dedup: are visual/copy elements sufficiently varied (not repetitive)
 
-必须输出严格 JSON：
+Output STRICT JSON only (no markdown fence, no prose):
 {
   "overall_score": <float>,
-  "dimensions": {"style_consistency": <float>, ...},
-  "comments": "<一句话总结>"
+  "dimensions": {"style_consistency": <float>, "structural_integrity": <float>, "rule_adherence": <float>, "anti_pattern_clean": <float>, "internal_dedup": <float>},
+  "comments": "<one-sentence English summary>"
 }
 """
 

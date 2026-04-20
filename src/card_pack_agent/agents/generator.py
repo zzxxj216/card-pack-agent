@@ -16,29 +16,32 @@ from .generator_cards_batched import generate_cards_batched
 log = structlog.get_logger()
 
 
-SCRIPT_SYSTEM_TEMPLATE = """你是视频分镜脚本生成器。
+SCRIPT_SYSTEM_TEMPLATE = """You are a video shot-list / script generator for a TikTok card pack.
+
+The product targets an English-speaking overseas audience. All free-text fields
+(notes, craft_note, bgm_suggestion fields) must be written in English.
 
 {global_style_guide}
 
 ---
 
-# 类目专属节奏
+# Category pacing playbook
 
 {category_playbook}
 
 ---
 
-# 文案禁忌
+# Copy anti-patterns
 
 {anti_patterns}
 
 ---
 
-# 输出规则
+# Output rules
 
-输出必须是纯 JSON 对象，无 markdown fence，无前后解释。
+Output a raw JSON object. No markdown fence, no prose before or after.
 
-严格按照以下 schema：
+Follow this schema exactly:
 
 ```
 {{
@@ -66,25 +69,28 @@ SCRIPT_SYSTEM_TEMPLATE = """你是视频分镜脚本生成器。
 }}
 ```
 
-- shots 数量必须等于卡贴数量
-- position 从 1 开始连续
-- duration_s: hook 卡 0.8-1.2s，普通卡 1.2-2.0s
+- `shots` count must equal the number of cards
+- `position` is 1-indexed and continuous
+- `duration_s`: hook cards 0.8-1.2s, normal cards 1.2-2.0s
+- Keep `shot.notes` empty (`""`) for every non-key_moment shot to stay within
+  token budget. Only key_moments carry a `craft_note`.
 """
 
 SCRIPT_USER_TEMPLATE = """# Strategy Doc
 
 {strategy_doc_json}
 
-# 已生成的卡贴（精简版）
+# Generated cards (compact form)
 
 {cards_json}
 
-# 你的任务
+# Your task
 
-产出完整分镜脚本，每张卡贴对应一个 shot。
-- 总时长目标：{target_duration}s
-- shots 数量必须等于 {n_cards}
-- 所有 position 从 1 到 {n_cards}，不得缺失或重复
+Produce a full shot-list script, one shot per card.
+- Target total duration: {target_duration}s
+- `shots` count must equal {n_cards}
+- All positions span 1..{n_cards} with no gaps or duplicates
+- All free-text fields in English
 """
 
 

@@ -149,11 +149,21 @@ def _canned_response(role: LLMRole, user: str) -> str:  # noqa: ARG001
         return json.dumps(_MOCK_STRATEGY_DOC)
     if role == LLMRole.GENERATOR:
         # Detect whether caller is asking for cards or script by cheap heuristic
-        if "分镜脚本" in user or "shots" in user.lower() or "total_duration" in user.lower():
+        if (
+            "分镜脚本" in user
+            or "shot-list" in user.lower()
+            or "shots" in user.lower()
+            or "total_duration" in user.lower()
+        ):
             return json.dumps(_MOCK_SCRIPT)
-        # Parse range_start / range_end from user prompt if present (batched path)
+        # Parse range_start / range_end from user prompt if present (batched path).
+        # Supports both Chinese ("position X 到 Y") and English ("positions X to Y").
         import re as _re
-        m_start = _re.search(r"position\s+(\d+)\s*到\s*(\d+)", user)
+        m_start = _re.search(
+            r"positions?\s+(\d+)\s*(?:到|to|-|–)\s*(\d+)",
+            user,
+            _re.IGNORECASE,
+        )
         if m_start:
             start, end = int(m_start.group(1)), int(m_start.group(2))
             cards_slice = [c for c in _MOCK_CARDS if start <= c["position"] <= end]

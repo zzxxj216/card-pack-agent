@@ -3,11 +3,17 @@
 流程：TopicInput → Planner → Generator (cards + script) → Evaluator → (images) → persist
 
 每次 run 收集所有 CallMeta 并汇总 token/cost，返回给调用方，方便成本追踪。
+
+副产物：所有成功到达 Pack 阶段的运行（无论 verdict）都会写一份 artifact 到
+`ARTIFACTS_DIR/{pack_id}.json`，前端评测页从那里读。
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
-from uuid import uuid4
+from datetime import datetime, timezone
+from pathlib import Path
+from uuid import UUID, uuid4
 
 import structlog
 
@@ -25,6 +31,9 @@ from .schemas import (
 )
 from .structured_output import CallMeta, StructuredCallError
 from .tools import evaluator, image_gen
+
+ROOT = Path(__file__).resolve().parent.parent.parent
+ARTIFACTS_DIR = ROOT / "artifacts" / "packs"
 
 log = structlog.get_logger()
 
@@ -152,9 +161,25 @@ def run(
         image_map = image_gen.generate_batch(pack.cards)
         pack.card_image_urls = image_map
 
-    # 4) Persist
+    # 4) Persist to vector/case store (only if passed)
     if persist and report and report.passed:
         _persist(pack, strategy)
+
+    # 5) Always dump artifact to disk (pass or fail) for the eval UI.
+    # Skip in mock mode — test runs shouldn't pollute artifacts/packs/.
+    from .config import settings
+    if pack is not None and not settings.is_mock:
+        try:
+            _dump_artifact(
+                pack=pack,
+                report=report,
+                cost=cost,
+                topic_input=topic_input,
+                hint_l1=hint_l1,
+                hint_l2=hint_l2,
+            )
+        except Exception as exc:
+            log.warning("orchestrator.artifact_dump_failed", error=str(exc)[:200])
 
     log.info("orchestrator.done",
              pack_id=str(pack.pack_id) if pack else None,
@@ -164,6 +189,75 @@ def run(
     return OrchestratorResult(
         pack=pack, clarification=None, evaluator_report=report, cost=cost,
     )
+
+
+def _dump_artifact(
+    *,
+    pack: Pack,
+    report: EvaluatorReport | None,
+    cost: CostSummary,
+    topic_input: TopicInput,
+    hint_l1: str | None,
+    hint_l2: str | None,
+) -> Path:
+    """Write pack + report + cost to artifacts/packs/{pack_id}.json."""
+    ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+    path = ARTIFACTS_DIR / f"{pack.pack_id}.json"
+
+    artifact = {
+        "pack_id": str(pack.pack_id),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "topic": pack.topic,
+        "raw_topic": topic_input.raw_topic,
+        "hint_l1": hint_l1,
+        "hint_l2": hint_l2,
+        "pack": json.loads(pack.model_dump_json()),
+        "evaluator_report": (
+            json.loads(report.model_dump_json()) if report is not None else None
+        ),
+        "cost": cost.as_dict(),
+    }
+    path.write_text(json.dumps(artifact, ensure_ascii=False, indent=2), encoding="utf-8")
+    log.info("orchestrator.artifact_dumped", path=str(path), pack_id=str(pack.pack_id))
+    return path
+
+
+def load_artifact(pack_id: str | UUID) -> dict | None:
+    """Read back a dumped artifact by pack_id. Returns None if not found."""
+    path = ARTIFACTS_DIR / f"{pack_id}.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def list_artifacts() -> list[dict]:
+    """List pack artifacts sorted by created_at desc (newest first).
+
+    Returns a lightweight summary per pack (not the full Pack body).
+    """
+    if not ARTIFACTS_DIR.exists():
+        return []
+    summaries = []
+    for p in ARTIFACTS_DIR.glob("*.json"):
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        report = data.get("evaluator_report") or {}
+        judge = report.get("judge_scores") or {}
+        summaries.append({
+            "pack_id": data.get("pack_id"),
+            "topic": data.get("topic"),
+            "created_at": data.get("created_at"),
+            "hint_l1": data.get("hint_l1"),
+            "hint_l2": data.get("hint_l2"),
+            "verdict": report.get("verdict"),
+            "overall_score": judge.get("overall_score") or judge.get("overall"),
+            "cost_usd": (data.get("cost") or {}).get("total_cost_usd"),
+            "path": str(p),
+        })
+    summaries.sort(key=lambda s: s.get("created_at") or "", reverse=True)
+    return summaries
 
 
 def _generate_and_evaluate(

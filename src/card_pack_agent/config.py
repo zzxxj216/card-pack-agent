@@ -21,6 +21,13 @@ class ImageProvider(str, Enum):
     OPENAI_IMAGE = "openai_image"
     REPLICATE = "replicate"
     STABILITY = "stability"
+    # jiekou.ai proxy endpoints
+    SEEDREAM_V45 = "seedream_v45"
+    FLUX_KONTEXT_MAX = "flux_kontext_max"
+    MIDJOURNEY_TXT2IMG = "midjourney_txt2img"
+    JIEKOU_OPENAI = "jiekou_openai"
+    # Google direct
+    GEMINI_FLASH_IMAGE_EDIT = "gemini_flash_image_edit"
 
 
 class StorageProvider(str, Enum):
@@ -52,6 +59,14 @@ class Settings(BaseSettings):
     image_api_key: str = ""
     image_model: str = ""
     image_concurrency: int = 10
+    # jiekou.ai proxy (sk_ key shared across seedream / flux-kontext / mj / jiekou-openai)
+    jiekou_api_key: str = ""
+    jiekou_base_url: str = "https://api.jiekou.ai"
+    # Google direct key for Gemini image endpoints (AIza...)
+    gemini_api_key: str = ""
+    # Polling budget for async endpoints (flux-kontext, midjourney)
+    async_poll_interval_s: float = 2.0
+    async_poll_max_attempts: int = 60
 
     # Postgres
     postgres_dsn: str = "postgresql://cardpack:cardpack@localhost:5432/cardpack"

@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block title %}{{ data.topic }} — pack {{ data.pack_id[:8] }}{% endblock %}
+{% block content %}
+
+{% set pack = data.pack %}
+{% set report = data.evaluator_report %}
+{% set strategy = pack.strategy %}
+{% set judge = (report.judge_scores if report else {}) or {} %}
+
+<section>
+  <div style="display: flex; justify-content: space-between; align-items: start;">
+    <div>
+      <h2 style="margin-bottom: 4px;">{{ data.topic }}</h2>
+      <p class="small" style="margin: 0;">
+        <a href="/">← all packs</a>
+        &nbsp;·&nbsp;
+        pack_id: <code>{{ data.pack_id }}</code>
+        &nbsp;·&nbsp;
+        created: {{ data.created_at[:19] if data.created_at else '—' }}
+      </p>
+    </div>
+    <div>
+      {% if report and report.verdict == "pass" %}
+        <span class="pill good">evaluator: pass</span>
+      {% elif report %}
+        <span class="pill bad">evaluator: {{ report.verdict }}</span>
+      {% endif %}
+      {% if judge.overall_score %}
+        <span class="pill">judge overall: {{ "%.2f"|format(judge.overall_score) }}</span>
+      {% endif %}
+      {% if feedback_summary.pack_verdict == "pack_reject" %}
+        <span class="pill bad">human: reject</span>
+      {% elif feedback_summary.pack_verdict == "pack_approve" %}
+        <span class="pill good">human: approve</span>
+      {% endif %}
+      {% if feedback_summary.n_card_rejects %}
+        <span class="pill warn">{{ feedback_summary.n_card_rejects }} card reject(s)</span>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Human review — whole pack</h2>
+  <p class="small" style="margin: 0 0 10px;">
+    Use this for "approve or kill" at the pack level. Card-level feedback is on each card below.
+  </p>
+  <form id="fb-pack-form" onsubmit="return submitPackFeedback(event)">
+    <input type="hidden" name="pack_id" value="{{ data.pack_id }}" />
+    <div class="form-row">
+      <div class="field" style="flex: 3; min-width: 320px;">
+        <label>reason (optional but encouraged)</label>
+        <input type="text" name="reason" placeholder="e.g. tone is too preachy, visuals too same-y, hook doesn't land" />
+      </div>
+      <div class="field" style="flex: 1; min-width: 180px;">
+        <label>tags (comma-separated)</label>
+        <input type="text" name="tags" placeholder="off_tone, stale_meme" />
+      </div>
+      <button type="submit" name="event" value="pack_reject"
+              style="background: var(--bad); color: #fff;">✗ reject pack</button>
+      <button type="submit" name="event" value="pack_approve"
+              style="background: var(--good); color: #0f1115;">✓ approve pack</button>
+    </div>
+  </form>
+
+  {% if feedback_events %}
+  <h3 style="margin-top: 14px;">Feedback history ({{ feedback_summary.total_events }})</h3>
+  <table>
+    <thead><tr><th>ts</th><th>event</th><th>pos</th><th>reason</th><th>tags</th></tr></thead>
+    <tbody>
+      {% for e in feedback_events %}
+      <tr>
+        <td class="small">{{ e.ts[:19] }}</td>
+        <td>
+          {% if e.event == "pack_reject" %}<span class="pill bad">pack reject</span>
+          {% elif e.event == "pack_approve" %}<span class="pill good">pack approve</span>
+          {% elif e.event == "card_reject" %}<span class="pill warn">card reject</span>
+          {% elif e.event == "card_approve" %}<span class="pill">card approve</span>
+          {% else %}{{ e.event }}{% endif %}
+        </td>
+        <td class="small">{{ e.position if e.position is not none else '—' }}</td>
+        <td class="small">{{ e.reason or '—' }}</td>
+        <td class="small">{{ e.tags | join(', ') if e.tags else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+<div class="row">
+
+  <section>
+    <h2>Strategy</h2>
+    <dl class="kv">
+      <dt>L1 / L2</dt>
+      <dd>{{ strategy.classification.l1 }} / {{ strategy.classification.l2 }}</dd>
+      <dt>L3</dt>
+      <dd>{{ strategy.classification.l3 | join(', ') }}</dd>
+      <dt>tier target</dt>
+      <dd>{{ strategy.tier_target }}</dd>
+      <dt>hook type</dt>
+      <dd>{{ strategy.narrative.hook_type if strategy.narrative else '—' }}</dd>
+      <dt>narrative arc</dt>
+      <dd>{{ strategy.narrative.narrative_arc if strategy.narrative else '—' }}</dd>
+      <dt>pacing</dt>
+      <dd>{{ strategy.narrative.pacing_note if strategy.narrative else '—' }}</dd>
+      <dt>palette</dt>
+      <dd>{{ strategy.visual_style.palette | join(', ') if strategy.visual_style else '—' }}</dd>
+      <dt>main subject</dt>
+      <dd>{{ strategy.visual_style.main_subject if strategy.visual_style else '—' }}</dd>
+      <dt>tone</dt>
+      <dd>{{ strategy.copy_rules.tone if strategy.copy_rules else '—' }}</dd>
+      <dt>avoid</dt>
+      <dd>{{ strategy.copy_rules.avoid | join(' / ') if strategy.copy_rules and strategy.copy_rules.avoid else '—' }}</dd>
+    </dl>
+    {% if strategy.reasoning %}
+      <p class="small" style="margin-top: 10px; color: var(--muted);">
+        <strong>reasoning:</strong> {{ strategy.reasoning }}
+      </p>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Evaluator</h2>
+    {% if report %}
+    <dl class="kv">
+      <dt>verdict</dt>
+      <dd>
+        {% if report.verdict == "pass" %}<span class="pill good">pass</span>
+        {% else %}<span class="pill bad">{{ report.verdict }}</span>{% endif %}
+      </dd>
+      <dt>hard failures</dt>
+      <dd>
+        {% if report.issues %}
+          <ul style="margin: 0; padding-left: 18px;">
+            {% for i in report.issues %}
+            <li class="small"><strong>{{ i.code }}</strong>: {{ i.message }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}—{% endif %}
+      </dd>
+    </dl>
+
+    <h3 style="margin-top: 14px;">Judge scores</h3>
+    {% if judge %}
+    <table>
+      {% for k, v in judge.items() %}
+      <tr>
+        <td class="small" style="width: 200px;">{{ k }}</td>
+        <td>
+          <div class="scorebar">
+            <div class="bar"><div style="width: {{ (v / 5.0 * 100) | round(1) }}%"></div></div>
+            <span class="small">{{ "%.2f"|format(v) }}</span>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p class="small">No judge scores recorded.</p>
+    {% endif %}
+
+    {% if data.judge_reruns %}
+    <h3 style="margin-top: 14px;">Judge reruns ({{ data.judge_reruns | length }})</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          {% for k in data.judge_reruns[0].keys() %}<th class="small">{{ k[:8] }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for rerun in data.judge_reruns %}
+        <tr>
+          <td class="small">{{ loop.index }}</td>
+          {% for v in rerun.values() %}<td class="small">{{ "%.1f"|format(v) }}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <form action="/api/judge-rerun/{{ data.pack_id }}" method="post" style="margin-top: 14px;"
+          onsubmit="return confirm('Rerun Judge? In dev this costs ~$0.03.');">
+      <button class="secondary" type="submit">rerun Judge</button>
+    </form>
+
+    {% else %}
+    <p class="small">No evaluator report recorded (pack may have been dumped standalone).</p>
+    {% endif %}
+  </section>
+
+</div>
+
+<section>
+  <h2>Cost summary</h2>
+  {% if data.cost %}
+  <dl class="kv">
+    <dt>total</dt>
+    <dd>${{ "%.4f"|format(data.cost.total_cost_usd or 0) }}</dd>
+    <dt>input tokens</dt>
+    <dd>{{ data.cost.total_input_tokens or 0 }}</dd>
+    <dt>output tokens</dt>
+    <dd>{{ data.cost.total_output_tokens or 0 }}</dd>
+  </dl>
+  {% if data.cost.per_role %}
+  <table style="margin-top: 10px;">
+    <thead>
+      <tr><th>role</th><th>calls</th><th>input</th><th>output</th><th>cost</th></tr>
+    </thead>
+    <tbody>
+      {% for role, stat in data.cost.per_role.items() %}
+      <tr>
+        <td>{{ role }}</td>
+        <td class="small">{{ stat.calls }}</td>
+        <td class="small">{{ stat.input_tokens }}</td>
+        <td class="small">{{ stat.output_tokens }}</td>
+        <td class="small">${{ "%.4f"|format(stat.cost_usd) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% else %}
+  <p class="small">No cost info recorded.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Cards ({{ pack.cards | length }})</h2>
+  <p class="small">
+    Click a provider button to render a card. Image is cached back into the pack artifact so reloading shows the result.
+  </p>
+  <div class="card-grid">
+    {% for c in pack.cards %}
+    {% set pos = c.position %}
+    {% set rendered = (data.rendered_images or {}).get(pos|string) or {} %}
+    <div class="card" id="card-{{ pos }}">
+      <div class="pos">#{{ pos }} · {{ c.segment }}</div>
+      <div class="hook">
+        {% if c.text_overlay_hint %}{{ c.text_overlay_hint.content_suggestion or '(no overlay)' }}
+        {% else %}(no overlay){% endif %}
+      </div>
+      <div class="visual">{{ c.prompt[:220] }}{% if c.prompt|length > 220 %}...{% endif %}</div>
+
+      {# Show any rendered image #}
+      {% for provider, r in rendered.items() %}
+        {% if r.ok %}
+          <img src="{{ r.image_url_web or r.image_url }}" alt="{{ provider }}" />
+          <div class="small">{{ provider }} · ${{ "%.3f"|format(r.cost_usd or 0) }} · {{ r.latency_ms or 0 }}ms</div>
+        {% else %}
+          <div class="small" style="color: var(--bad);">{{ provider }}: {{ r.error }}</div>
+        {% endif %}
+      {% endfor %}
+
+      <div class="providers">
+        {% for p in providers %}
+        <button onclick="genImage('{{ data.pack_id }}', {{ pos }}, '{{ p }}', this)">{{ p }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <h2>Script ({{ pack.script.shots | length }} shots · {{ pack.script.total_duration_s }}s)</h2>
+  {% if pack.script.bgm_suggestion %}
+  <p class="small">
+    <strong>BGM:</strong> {{ pack.script.bgm_suggestion.mood }} — {{ pack.script.bgm_suggestion.reference }}
+  </p>
+  {% endif %}
+  <details>
+    <summary class="small" style="cursor: pointer;">shot list (click)</summary>
+    <table style="margin-top: 10px;">
+      <thead><tr><th>#</th><th>dur</th><th>transition</th><th>notes</th></tr></thead>
+      <tbody>
+        {% for s in pack.script.shots %}
+        <tr>
+          <td class="small">{{ s.position }}</td>
+          <td class="small">{{ s.duration_s }}s</td>
+          <td class="small">{{ s.transition or '—' }}</td>
+          <td class="small">{{ (s.notes or '')[:120] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+</section>
+
+<section>
+  <h2>Raw artifact JSON</h2>
+  <details>
+    <summary class="small" style="cursor: pointer;">show JSON</summary>
+    <pre class="code">{{ data | tojson(indent=2) }}</pre>
+  </details>
+</section>
+
+<script>
+async function genImage(packId, position, provider, btn) {
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '…';
+  try {
+    const fd = new FormData();
+    fd.append('provider', provider);
+    fd.append('position', position);
+    const r = await fetch('/api/image/' + packId, { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!data.ok) {
+      alert(provider + ' failed: ' + (data.error || 'unknown'));
+      return;
+    }
+    // Append new image to the card
+    const card = document.getElementById('card-' + position);
+    const img = document.createElement('img');
+    img.src = data.image_url;
+    img.alt = provider;
+    const caption = document.createElement('div');
+    caption.className = 'small';
+    caption.textContent = provider + ' · $' + (data.cost_usd || 0).toFixed(3) + ' · ' + (data.latency_ms || 0) + 'ms';
+    card.insertBefore(img, card.querySelector('.providers'));
+    card.insertBefore(caption, card.querySelector('.providers'));
+  } catch (e) {
+    alert('error: ' + e);
+  } finally {
+    btn.textContent = orig;
+    btn.disabled = false;
+  }
+}
+</script>
+
+{% endblock %}
