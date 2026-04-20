@@ -26,8 +26,11 @@ from ....config import settings
 log = structlog.get_logger()
 
 
-# Poll URLs to try when we have only a task id. Cheapest first.
-# {id} is replaced with the task id.
+# Poll URLs to try when we have only a task id.
+# The primary endpoint uses query param: GET /v3/async/task-result?task_id=xxx
+ASYNC_POLL_PRIMARY = "/v3/async/task-result"
+
+# Fallback path-based candidates (legacy, kept for compatibility)
 ASYNC_STATUS_URL_CANDIDATES = [
     "/v3/async/result/{id}",
     "/v3/async/{id}",
@@ -140,62 +143,42 @@ def poll_async_result(
 ) -> dict:
     """Poll for an async task and return the final payload.
 
-    Tries `ASYNC_STATUS_URL_CANDIDATES` in order. If `endpoint_hint` is given
-    (e.g. '/v3/async/flux-1-kontext-max'), also tries `{endpoint_hint}/{id}`.
+    Primary: GET /v3/async/task-result?task_id=xxx
+    Response shape:
+      { "task": {"task_id": "...", "status": "TASK_STATUS_SUCCEED"}, "images": [...] }
 
     Raises JiekouError on failure or timeout.
     """
     interval = settings.async_poll_interval_s
     max_attempts = settings.async_poll_max_attempts
-
-    candidates = list(ASYNC_STATUS_URL_CANDIDATES)
-    if endpoint_hint:
-        hint_path = endpoint_hint.rstrip("/") + "/{id}"
-        candidates.insert(0, hint_path)
-
-    # Find a working URL
-    working_url: str | None = None
     headers = jiekou_headers()
-    last_error = ""
+    poll_url = jiekou_url(ASYNC_POLL_PRIMARY)
 
     with httpx.Client(timeout=30) as client:
         for attempt in range(max_attempts):
-            if working_url is None:
-                for path in candidates:
-                    try_url = jiekou_url(path.format(id=task_id))
-                    try:
-                        r = client.get(try_url, headers=headers)
-                    except httpx.HTTPError as e:
-                        last_error = f"{try_url} -> {e}"
-                        continue
-                    if r.status_code == 200:
-                        working_url = try_url
-                        data = r.json() if r.content else {}
-                        break
-                    last_error = f"{try_url} -> HTTP {r.status_code}: {r.text[:150]}"
-                if working_url is None:
-                    raise JiekouError(
-                        f"no working async status URL found for task {task_id}; "
-                        f"last error: {last_error}"
-                    )
-            else:
-                r = client.get(working_url, headers=headers)
-                r.raise_for_status()
-                data = r.json() if r.content else {}
+            try:
+                r = client.get(poll_url, headers=headers, params={"task_id": task_id})
+            except httpx.HTTPError as e:
+                log.warning("jiekou.poll_error", task_id=task_id, attempt=attempt, error=str(e)[:150])
+                time.sleep(interval)
+                continue
 
-            status = _lower_str(data.get("status")) or _lower_str(_find_first(data, ["status", "state"]))
-            if status in _DONE_STATES:
+            if r.status_code != 200:
+                log.warning("jiekou.poll_http_error", task_id=task_id, status=r.status_code)
+                time.sleep(interval)
+                continue
+
+            data = r.json() if r.content else {}
+            task_obj = data.get("task", {})
+            status = task_obj.get("status", "")
+
+            if status == "TASK_STATUS_SUCCEED":
                 return data
-            if status in _FAIL_STATES:
-                raise JiekouError(
-                    f"async task {task_id} failed: {data.get('error') or data}"
-                )
+            if status in ("TASK_STATUS_FAILED", "TASK_STATUS_CANCELLED"):
+                reason = task_obj.get("reason", "unknown")
+                raise JiekouError(f"async task {task_id} failed: {reason}")
 
-            # No explicit status? Maybe a valid final payload already.
-            url, b = extract_image_payload(data)
-            if url or b:
-                return data
-
+            log.debug("jiekou.poll_waiting", task_id=task_id, status=status, attempt=attempt)
             time.sleep(interval)
 
     raise JiekouError(
