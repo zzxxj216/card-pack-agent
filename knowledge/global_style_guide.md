@@ -126,15 +126,48 @@ Over-emotion signals (Evaluator should warn):
 
 ## 7. AI image generation — baseline
 
-- Every prompt must include a style anchor
-  (e.g. `film photography, 35mm, natural light`)
-- Negative prompt must include text-related tokens:
-  `text, watermark, logo, typography, captions, lettering` — overlay text is
-  composited in post, never generated inside the image
-- All cards in one pack should share a seed family or a single style
-  reference image
+### 7.1 Output format: stickers, not scenes
+
+Every card in a pack is a **sticker** the viewer pastes into their own TikTok.
+It is never a standalone photograph or scene. This is non-negotiable.
+
+Required composition for every `prompt`:
+- **One focal subject** (or a tight cluster) centered on a **plain, near-uniform,
+  near-white background** — off-white, light studio paper, or subtle soft
+  gradient. No scene, no environment, no interior/exterior, no floor/wall/table/
+  surface, no horizon, no "resting on X" or "placed on Y".
+- Subject sits with **~8-12% clear margin on all sides** so downstream
+  background removal / die-cut has room.
+- Lighting is **soft, clean, studio-like** with no environmental shadow on a
+  ground plane. A subtle contact shadow directly under the subject is OK.
+- Any aesthetic direction (film grain, 35mm look, etched, watercolor) must be
+  treated as **a texture applied to the subject only**, not as scene framing.
+  "Film photography, 35mm" means "film-grain look on the isolated subject",
+  NOT "a film photograph of a scene".
+
+### 7.2 Style anchor
+
+- Every prompt must include the pack's `style_anchor` phrase
+- Every prompt must also include an isolation phrase, one of:
+  `die-cut sticker`, `isolated on plain off-white background`,
+  `product-photo isolation`, `subject centered on clean light backdrop`
+
+### 7.3 Negative prompt (required tokens, append to every card)
+
+- Text-related: `text, watermark, logo, typography, captions, lettering`
+  (overlay text is composited in post, never generated inside the image)
+- Scene-related: `scene, environment, landscape, interior, room, floor, wall,
+  furniture, table, surface, horizon, scenery, ground shadow, background
+  clutter`
+
+### 7.4 Consistency & QA
+
+- All cards in one pack should share a seed family or a single style reference
 - Human-subject generation requires a post-check: finger count, facial
   symmetry, eye direction
+- If the pack concept requires two subjects interacting (e.g. hand + object),
+  arrange them as a **single floating subject group** on a plain backdrop —
+  never introduce the environment to connect them.
 
 ---
 

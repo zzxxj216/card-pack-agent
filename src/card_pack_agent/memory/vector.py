@@ -22,7 +22,13 @@ COLLECTION_TOPIC = "topic_vectors"
 COLLECTION_PACK = "pack_vectors"
 COLLECTION_CARD = "card_vectors"
 
-EMBEDDING_DIM = 768  # stub; replace with real embedding dim when wired
+
+def _embedding_dim() -> int:
+    return settings.embedding_dim
+
+
+# Legacy alias — prefer `_embedding_dim()` in new code
+EMBEDDING_DIM = 3072  # text-embedding-3-large via jiekou.ai
 
 
 @dataclass
@@ -69,13 +75,28 @@ class VectorStore:
             return
         from qdrant_client.models import Distance, VectorParams
         client = self._real_client()
+        dim = _embedding_dim()
         for col in (COLLECTION_TOPIC, COLLECTION_PACK, COLLECTION_CARD):
-            if not client.collection_exists(col):
+            if client.collection_exists(col):
+                info = client.get_collection(col)
+                current_dim = info.config.params.vectors.size
+                if current_dim != dim:
+                    log.warning(
+                        "vector.collection_dim_mismatch_recreating",
+                        collection=col, current=current_dim, wanted=dim,
+                    )
+                    client.delete_collection(col)
+                    client.create_collection(
+                        collection_name=col,
+                        vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
+                    )
+                    log.info("vector.collection_recreated", collection=col, dim=dim)
+            else:
                 client.create_collection(
                     collection_name=col,
-                    vectors_config=VectorParams(size=EMBEDDING_DIM, distance=Distance.COSINE),
+                    vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
                 )
-                log.info("vector.collection_created", collection=col)
+                log.info("vector.collection_created", collection=col, dim=dim)
 
     # --- Upsert ---
 
@@ -168,12 +189,14 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / (na * nb + 1e-12)
 
 
-# --- Embedding (stub — replace with real model in Phase 3) ---
+# --- Embedding ---
 
-def fake_embed(text: str, dim: int = EMBEDDING_DIM) -> list[float]:
-    """Deterministic hash-based embedding. Use for mock mode only."""
+def fake_embed(text: str, dim: int | None = None) -> list[float]:
+    """Deterministic hash-based embedding. Used by mock mode and as a
+    last-resort fallback if the real embedding call fails."""
+    if dim is None:
+        dim = _embedding_dim()
     h = hashlib.sha256(text.encode("utf-8")).digest()
-    # Expand hash deterministically to `dim` floats in [-1, 1]
     out: list[float] = []
     seed = h
     while len(out) < dim:
@@ -186,11 +209,16 @@ def fake_embed(text: str, dim: int = EMBEDDING_DIM) -> list[float]:
 
 
 def embed(text: str) -> list[float]:
-    """Real embedding hook. For now delegates to fake_embed.
+    """Real embedding — OpenAI-compat text-embedding-3-small via jiekou.
 
-    Phase 3: swap to Anthropic embedding API or a hosted embedding model.
-    """
-    return fake_embed(text)
+    Falls back to `fake_embed` in mock mode (handled inside embed_text) and
+    on any exception (so retrieval never hard-fails the pipeline)."""
+    from .embedding import embed_text
+    try:
+        return embed_text(text)
+    except Exception as exc:
+        log.warning("vector.embed_fallback_to_fake", error=str(exc)[:200])
+        return fake_embed(text)
 
 
 # Module-level singleton

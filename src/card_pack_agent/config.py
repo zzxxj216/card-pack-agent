@@ -75,6 +75,12 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str = ""
 
+    # Embeddings (OpenAI-compat; routed through jiekou by default)
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dim: int = 1536
+    embedding_base_url: str = ""       # override; falls back to jiekou_base_url
+    embedding_api_key: str = ""        # override; falls back to jiekou_api_key
+
     # Storage
     storage_provider: StorageProvider = StorageProvider.LOCAL
     storage_bucket: str = ""

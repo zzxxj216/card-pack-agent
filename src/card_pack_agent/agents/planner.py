@@ -115,9 +115,9 @@ omit, or add fields.
   }},
   "visual_direction": {{
     "palette": ["#F5A623", "#E8824A", "#FFF8E7"],
-    "main_subject": "...",
-    "composition_note": "...",
-    "style_anchor": "film photography, 35mm, natural light"
+    "main_subject": "single focal object or tight cluster (NOT a scene) — e.g. 'a folded pair of reading glasses', 'a hand holding a worn photograph', 'a small steaming bowl'. Must be describable as a floating sticker, not placed in any environment.",
+    "composition_note": "sticker-ready isolation: subject centered with ~10% margin on a plain near-white backdrop; no floor/wall/table/room; soft studio lighting; aesthetic cues (grain, watercolor, etc.) apply to subject texture only",
+    "style_anchor": "die-cut sticker, soft film-grain texture, isolated on plain off-white background"
   }},
   "copy_direction": {{
     "tone": "restrained, tender, specific",
@@ -146,6 +146,19 @@ Hard constraints:
   hook_type, narrative_arc, pacing_note, cta.example, main_subject) must be
   written in English
 - Do not add fields not in the schema
+
+Sticker-output constraint (NON-NEGOTIABLE):
+- The pack ships as 50 stickers a viewer pastes into TikTok videos. Every card
+  is a single isolated subject on a plain near-white backdrop, never a scene.
+- "visual_direction.main_subject" must name a single object or tight subject
+  cluster describable as a floating sticker. NEVER name an environment, room,
+  landscape, or scenic setting.
+- "visual_direction.composition_note" must describe sticker-ready isolation
+  (subject centered on clean backdrop with margin for die-cut). NEVER describe
+  scene framing, background environments, or environmental shadows.
+- "visual_direction.style_anchor" should read as a TEXTURE/aesthetic cue
+  applied to the subject (e.g. "soft film-grain texture, muted warm tones,
+  die-cut sticker") — not as a photo-of-scene phrase.
 """
 
 

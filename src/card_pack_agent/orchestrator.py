@@ -299,6 +299,8 @@ def _generate_and_evaluate(
 
 
 def _persist(pack: Pack, strategy: StrategyDoc) -> None:
+    from .memory.vector import COLLECTION_TOPIC, embed, vector_store
+
     l1 = _coerce_enum(strategy.classification.l1, L1)
     l2 = _coerce_enum(strategy.classification.l2, L2)
     case = CaseRecord(
@@ -315,6 +317,24 @@ def _persist(pack: Pack, strategy: StrategyDoc) -> None:
         is_synthetic=False,
     )
     case_store.insert(case)
+
+    try:
+        vector_store.upsert(
+            collection=COLLECTION_TOPIC,
+            point_id=str(case.pack_id),
+            vector=embed(case.topic),
+            payload={
+                "pack_id": str(case.pack_id),
+                "topic": case.topic,
+                "l1": case.topic_l1.value,
+                "l2": case.topic_l2.value,
+                "tier": case.tier.value if case.tier else "bad",
+                "is_synthetic": False,
+                "created_at": case.created_at.isoformat(),
+            },
+        )
+    except Exception as exc:
+        log.warning("persist.vector_upsert_failed", error=str(exc)[:200])
 
 
 def _coerce_enum(value, enum_cls):

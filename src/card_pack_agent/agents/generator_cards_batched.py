@@ -60,11 +60,39 @@ English. The image `prompt` field is already English by convention.
 Hard constraints:
 - `position` must match the requested range exactly
 - `segment` only allows: hook, setup, development, turn, close
-- `negative_prompt` must include "text, watermark, logo, typography"
 - `prompt` MUST NOT describe any text/letters/typography that should appear on
   the card; overlay text is composited in post. Write prompts in English only.
 - Every `prompt` must include the `style_anchor` phrase and colors from the
   locked palette
+
+## Sticker composition (NON-NEGOTIABLE)
+
+Every card is a **sticker** that a TikTok viewer pastes into their own video.
+It is never a scene or a photograph of an environment.
+
+- Every `prompt` must describe ONE focal subject (or a tight subject cluster)
+  centered on a plain, near-uniform, near-white background. Include at least
+  one of these isolation phrases verbatim: `die-cut sticker`,
+  `isolated on plain off-white background`, `product-photo isolation`,
+  `subject centered on clean light backdrop`.
+- The subject must have ~8-12% clear margin on all sides.
+- Do NOT describe any scene, environment, interior, exterior, landscape,
+  room, floor, wall, furniture, table, surface, horizon, shelf, window,
+  ground, "resting on X", or "placed on Y". If the concept feels like it
+  needs two objects interacting, describe them as a floating subject group
+  on a plain backdrop, not connected by environment.
+- Aesthetic direction from `style_anchor` (e.g. film grain, 35mm, watercolor)
+  is a TEXTURE cue applied to the subject only — never scene framing.
+  "Film photography, 35mm" => film-grain look on the isolated subject, NOT
+  "a film photograph of a scene".
+- `negative_prompt` MUST include every one of these tokens (comma-separated,
+  exact text):
+  `text, watermark, logo, typography, captions, lettering, scene,
+  environment, landscape, interior, room, floor, wall, furniture, table,
+  surface, horizon, scenery, ground shadow, background clutter`
+
+## Overlay text hint
+
 - `text_overlay_hint` is an object (not a string) with exactly:
   content_suggestion, position, size_tier
 - `text_overlay_hint.position` allows: top-center, top-left, bottom-center, center
