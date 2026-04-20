@@ -49,8 +49,8 @@ class GeminiFlashImageEditProvider(ImageProvider):
 
     def generate(self, params: GenerationParams) -> ImageResult:
         settings.require_real_mode(f"GeminiFlashImageEditProvider({self.model})")
-        if not settings.gemini_api_key:
-            return self._error_result(params, "GEMINI_API_KEY missing")
+        if not settings.jiekou_api_key:
+            return self._error_result(params, "JIEKOU_API_KEY missing")
 
         w, h = (
             (params.width, params.height)
@@ -60,9 +60,9 @@ class GeminiFlashImageEditProvider(ImageProvider):
 
         payload: dict[str, Any] = {
             "prompt": params.prompt,
-            "size": f"{w}x{h}",
+            "size": params.extra.get("size", "1K"),
             "aspect_ratio": params.aspect_ratio or "9:16",
-            "output_format": params.extra.get("output_format", "png"),
+            "output_format": params.extra.get("output_format", "image/png"),
             "image_urls": params.extra.get("image_urls", []),
             "image_base64s": params.extra.get("image_base64s", []),
             "google": {
@@ -118,7 +118,7 @@ class GeminiFlashImageEditProvider(ImageProvider):
     )
     def _post(self, payload: dict) -> dict:
         headers = {
-            "Authorization": f"Bearer {settings.gemini_api_key}",
+            "Authorization": f"Bearer {settings.jiekou_api_key}",
             "Content-Type": "application/json",
         }
         with httpx.Client(timeout=120) as client:

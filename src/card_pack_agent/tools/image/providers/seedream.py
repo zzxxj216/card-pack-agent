@@ -60,22 +60,19 @@ class SeedreamProvider(ImageProvider):
             if params.width and params.height
             else aspect_to_wh(params.aspect_ratio)
         )
+        # seedream requires at least 3686400 pixels (1920x1920)
+        if w * h < 3686400:
+            w, h = max(w, 1920), max(h, 1920)
 
         payload: dict[str, Any] = {
             "prompt": params.prompt,
             "size": f"{w}x{h}",
             "watermark": bool(params.extra.get("watermark", False)),
-            "optimize_prompt_options": {
-                "mode": params.extra.get("optimize_mode", "disable"),
-            },
-            "sequential_image_generation": params.extra.get(
-                "sequential_image_generation", "disabled"
-            ),
-            "sequential_image_generation_options": {
-                "max_images": int(params.extra.get("max_images", 1)),
-            },
-            "image": params.extra.get("image", []),  # reference images if any
         }
+        # Only include image field when reference images are provided
+        ref_images = params.extra.get("image", [])
+        if ref_images:
+            payload["image"] = ref_images
 
         t0 = time.monotonic()
         try:
