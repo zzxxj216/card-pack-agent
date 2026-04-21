@@ -25,7 +25,7 @@ from __future__ import annotations
 import json
 import statistics
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import structlog
@@ -88,7 +88,7 @@ def run_bench(
     with_judge: bool = True,
 ) -> tuple[list[BenchRunResult], list[BenchSummary]]:
     """Run bench: every case × every provider, score each, aggregate."""
-    out = output_dir or Path("./data/bench_runs") / datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    out = output_dir or Path("./data/bench_runs") / datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     out.mkdir(parents=True, exist_ok=True)
 
     results: list[BenchRunResult] = []
@@ -215,7 +215,7 @@ def _median(xs) -> float:
 
 def _render_markdown(summaries: list[BenchSummary]) -> str:
     lines = ["# Image Provider Bench\n"]
-    lines.append(f"**Timestamp**: {datetime.utcnow().isoformat()}Z\n")
+    lines.append(f"**Timestamp**: {datetime.now(UTC).isoformat()}\n")
 
     # Main comparison table
     lines.append("## Score comparison\n")
@@ -232,7 +232,10 @@ def _render_markdown(summaries: list[BenchSummary]) -> str:
 
     # Cost per quality point
     lines.append("\n## Cost efficiency (cost per overall score point)\n")
-    for s in sorted(summaries, key=lambda x: (x.total_cost_usd / max(s.avg_overall, 0.01))):
+    for s in sorted(
+        summaries,
+        key=lambda x: (x.total_cost_usd / max(x.avg_overall, 0.01)),
+    ):
         if s.avg_overall > 0:
             ratio = s.total_cost_usd / (s.n_ok * s.avg_overall)
             lines.append(f"- `{s.provider}`: ${ratio:.4f} / (image × score point)")

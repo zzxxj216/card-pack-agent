@@ -73,6 +73,7 @@ def generate_batch(
     :returns: mapping position → ImageResult
     """
     concurrency = concurrency or settings.image_concurrency
+    provider_name = provider if provider is not None else settings.image_provider
     results: dict[int, ImageResult] = {}
 
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
@@ -89,10 +90,13 @@ def generate_batch(
                           position=card.position, error=str(e))
                 # Build an error result so downstream can detect failure
                 params = card_to_params(card)
+                try:
+                    p_name = ProviderName(provider_name)
+                except ValueError:
+                    p_name = ProviderName.MOCK
                 results[card.position] = ImageResult(
                     image_id="",
-                    provider=ProviderName(provider or settings.image_provider)
-                    if provider else ProviderName.MOCK,
+                    provider=p_name,
                     model="",
                     image_url="",
                     params_fingerprint=params.fingerprint(),

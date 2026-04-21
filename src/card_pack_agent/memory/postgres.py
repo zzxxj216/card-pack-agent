@@ -90,7 +90,7 @@ class CaseStore:
         if settings.is_mock:
             case = self._memory.get(pack_id)
             if case:
-                case.metrics = metrics  # type: ignore[assignment]
+                case.metrics = Metrics.model_validate(metrics)
                 case.tier = tier
             return
         with self._connect() as conn, conn.cursor() as cur:

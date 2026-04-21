@@ -49,8 +49,11 @@ class GeminiFlashImageEditProvider(ImageProvider):
 
     def generate(self, params: GenerationParams) -> ImageResult:
         settings.require_real_mode(f"GeminiFlashImageEditProvider({self.model})")
-        if not settings.jiekou_api_key:
-            return self._error_result(params, "JIEKOU_API_KEY missing")
+        if not _resolved_auth_key():
+            return self._error_result(
+                params,
+                "GEMINI_API_KEY missing (or set JIEKOU_API_KEY as fallback)",
+            )
 
         w, h = (
             (params.width, params.height)
@@ -118,7 +121,7 @@ class GeminiFlashImageEditProvider(ImageProvider):
     )
     def _post(self, payload: dict) -> dict:
         headers = {
-            "Authorization": f"Bearer {settings.jiekou_api_key}",
+            "Authorization": f"Bearer {_resolved_auth_key()}",
             "Content-Type": "application/json",
         }
         with httpx.Client(timeout=120) as client:
@@ -136,3 +139,9 @@ class GeminiFlashImageEditProvider(ImageProvider):
             prompt=params.prompt,
             error=error,
         )
+
+
+def _resolved_auth_key() -> str:
+    # Preferred: dedicated Google key. Keep jiekou key as backward-compatible
+    # fallback to avoid breaking existing local setups.
+    return settings.gemini_api_key or settings.jiekou_api_key

@@ -170,15 +170,26 @@ def poll_async_result(
 
             data = r.json() if r.content else {}
             task_obj = data.get("task", {})
-            status = task_obj.get("status", "")
+            raw_status = (
+                task_obj.get("status")
+                or data.get("status")
+                or data.get("state")
+                or ""
+            )
+            status = _lower_str(raw_status)
 
-            if status == "TASK_STATUS_SUCCEED":
+            if raw_status == "TASK_STATUS_SUCCEED" or status in _DONE_STATES:
                 return data
-            if status in ("TASK_STATUS_FAILED", "TASK_STATUS_CANCELLED"):
+            if raw_status in ("TASK_STATUS_FAILED", "TASK_STATUS_CANCELLED") or status in _FAIL_STATES:
                 reason = task_obj.get("reason", "unknown")
                 raise JiekouError(f"async task {task_id} failed: {reason}")
 
-            log.debug("jiekou.poll_waiting", task_id=task_id, status=status, attempt=attempt)
+            log.debug(
+                "jiekou.poll_waiting",
+                task_id=task_id,
+                status=str(raw_status)[:80],
+                attempt=attempt,
+            )
             time.sleep(interval)
 
     raise JiekouError(

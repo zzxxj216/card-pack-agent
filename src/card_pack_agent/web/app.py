@@ -51,12 +51,12 @@ if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Serve generated images (so <img src="/generated/mock/xxx.png"> works)
-if settings.storage_local_path.exists():
-    app.mount(
-        "/generated",
-        StaticFiles(directory=str(settings.storage_local_path)),
-        name="generated",
-    )
+settings.storage_local_path.mkdir(parents=True, exist_ok=True)
+app.mount(
+    "/generated",
+    StaticFiles(directory=str(settings.storage_local_path)),
+    name="generated",
+)
 
 
 # --- HTML routes ---

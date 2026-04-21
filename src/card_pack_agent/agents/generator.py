@@ -249,4 +249,3 @@ def _cards_compact(cards: list[CardPrompt]) -> str:
     ]
     return json.dumps(compact, ensure_ascii=False)
 
-

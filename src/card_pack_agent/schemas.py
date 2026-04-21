@@ -1,7 +1,7 @@
 """系统内流转的所有数据模型。与 knowledge/prompt_templates/*.md 的 schema 对齐。"""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
@@ -199,7 +199,7 @@ class Pack(BaseModel):
     script: Script
     # Populated later in the pipeline:
     card_image_urls: dict[int, str] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 # --- Evaluator ---
@@ -258,7 +258,7 @@ class CaseRecord(BaseModel):
     extracted_patterns: list[dict[str, Any]] = Field(default_factory=list)
     is_exploration: bool = False
     is_synthetic: bool = False
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 # --- Reviewer output ---

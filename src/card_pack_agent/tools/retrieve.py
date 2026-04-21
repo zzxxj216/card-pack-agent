@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime
+from datetime import UTC, datetime
 
 from ..feedback import card_reject_penalties, rejected_pack_ids
 from ..memory.vector import COLLECTION_TOPIC, VectorHit, embed, vector_store
@@ -67,13 +67,15 @@ def retrieve_similar_packs(
         filtered.append(h)
 
     # Time decay rerank
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     reranked = []
     for h in filtered:
         created_at_iso = h.payload.get("created_at")
         if created_at_iso:
             try:
                 created = datetime.fromisoformat(created_at_iso)
+                if created.tzinfo is None:
+                    created = created.replace(tzinfo=UTC)
                 age_days = (now - created).days
                 decay = math.exp(-age_days / TIME_HALF_LIFE_DAYS)
                 combined = h.score * decay
