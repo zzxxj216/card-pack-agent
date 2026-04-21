@@ -147,7 +147,12 @@
     @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
     .kv { display: grid; grid-template-columns: 180px 1fr; gap: 4px 10px; font-size: 12px; }
     .kv dt { color: var(--muted); }
-    .kv dd { margin: 0; word-break: break-all; }
+    .kv dd { margin: 0; word-break: break-word; }
+    .palette { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .palette .swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); display: inline-block; }
+    .palette code { font-size: 11px; color: var(--muted); }
+    .issue-row { display: grid; grid-template-columns: 70px 180px 1fr; gap: 8px; align-items: start; padding: 4px 0; border-bottom: 1px solid var(--border); }
+    .issue-row:last-child { border-bottom: 0; }
   </style>
 </head>
 <body>

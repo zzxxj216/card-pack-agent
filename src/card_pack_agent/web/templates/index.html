@@ -53,28 +53,50 @@
       <tr>
         <th>created</th>
         <th>topic</th>
-        <th>L1 / L2</th>
+        <th>classified (hint)</th>
+        <th>cards / dur</th>
         <th>verdict</th>
         <th>judge</th>
+        <th>human</th>
         <th>cost</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       {% for p in packs %}
+      {% set hint_differs = (p.hint_l1 and p.actual_l1 and p.hint_l1 != p.actual_l1) or (p.hint_l2 and p.actual_l2 and p.hint_l2 != p.actual_l2) %}
+      {% set dur_bad = p.total_duration_s is not none and p.n_shots and (p.total_duration_s / p.n_shots < 0.6 or p.total_duration_s / p.n_shots > 2.5) %}
       <tr>
         <td class="small">{{ p.created_at[:19] if p.created_at else "—" }}</td>
         <td><a href="/packs/{{ p.pack_id }}">{{ p.topic or p.pack_id[:8] }}</a></td>
-        <td class="small">{{ p.hint_l1 or "—" }} / {{ p.hint_l2 or "—" }}</td>
+        <td class="small">
+          {{ p.actual_l1 or "—" }} / {{ p.actual_l2 or "—" }}
+          {% if hint_differs %}
+            <br/><span class="small" style="color: var(--warn);">hint: {{ p.hint_l1 or "—" }} / {{ p.hint_l2 or "—" }}</span>
+          {% endif %}
+        </td>
+        <td class="small">
+          {{ p.n_cards or 0 }}c / {{ p.n_shots or 0 }}s
+          {% if p.total_duration_s is not none %}
+            · <span{% if dur_bad %} class="pill bad"{% endif %}>{{ "%.1f"|format(p.total_duration_s) }}s</span>
+          {% endif %}
+        </td>
         <td>
           {% if p.verdict == "pass" %}<span class="pill good">pass</span>
           {% elif p.verdict %}<span class="pill bad">{{ p.verdict }}</span>
           {% else %}<span class="pill">—</span>{% endif %}
+          {% if p.n_issues %}<span class="pill warn">{{ p.n_issues }} issue(s)</span>{% endif %}
         </td>
         <td class="small">
           {% if p.overall_score is not none %}
             {{ "%.2f"|format(p.overall_score) }}
           {% else %}—{% endif %}
+        </td>
+        <td class="small">
+          {% if p.pack_verdict == "pack_reject" %}<span class="pill bad">reject</span>
+          {% elif p.pack_verdict == "pack_approve" %}<span class="pill good">approve</span>
+          {% endif %}
+          {% if p.n_card_rejects %}<span class="pill warn">{{ p.n_card_rejects }}×card</span>{% endif %}
         </td>
         <td class="small">
           {% if p.cost_usd is not none %}${{ "%.3f"|format(p.cost_usd) }}{% else %}—{% endif %}

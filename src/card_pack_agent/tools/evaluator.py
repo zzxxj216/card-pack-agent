@@ -153,6 +153,53 @@ def check_visual_duplication(pack: Pack, max_near_duplicates: int = 3) -> list[E
     return issues
 
 
+def check_pacing_sanity(pack: Pack) -> list[EvaluatorIssue]:
+    """Flag scripts with unusable pacing.
+
+    Even with the generator's clamp-repair in place, the evaluator should fail
+    packs whose shot durations land outside a sane viewing band, so we catch
+    any future regression (or hand-authored broken script) at the gate.
+    """
+    SHOT_MIN, SHOT_MAX = 0.6, 2.5
+    issues: list[EvaluatorIssue] = []
+    shots = pack.script.shots
+    if not shots:
+        return issues
+
+    bad = [s for s in shots if s.duration_s < SHOT_MIN or s.duration_s > SHOT_MAX]
+    if bad:
+        issues.append(EvaluatorIssue(
+            code="shot_duration_out_of_range",
+            severity=EvaluatorVerdict.FAIL,
+            message=(
+                f"{len(bad)}/{len(shots)} shots have duration outside "
+                f"[{SHOT_MIN}, {SHOT_MAX}]s"
+            ),
+            location=f"shots:{[s.position for s in bad][:10]}",
+        ))
+
+    total = pack.script.total_duration_s
+    summed = round(sum(s.duration_s for s in shots), 2)
+    if abs(total - summed) > 1.0:
+        issues.append(EvaluatorIssue(
+            code="script_total_duration_mismatch",
+            severity=EvaluatorVerdict.FAIL,
+            message=f"total_duration_s={total}, sum of shots={summed}",
+        ))
+
+    min_expected = len(shots) * SHOT_MIN
+    if total < min_expected:
+        issues.append(EvaluatorIssue(
+            code="script_total_duration_too_short",
+            severity=EvaluatorVerdict.FAIL,
+            message=(
+                f"total_duration_s={total}s < min expected "
+                f"{min_expected:.1f}s for {len(shots)} shots"
+            ),
+        ))
+    return issues
+
+
 def check_stale_memes(pack: Pack) -> list[EvaluatorIssue]:
     issues = []
     memes = [m.casefold() for m in _STALE_MEMES]
@@ -265,6 +312,7 @@ def evaluate(pack: Pack, *, run_judge: bool = True) -> EvaluatorReport:
     all_issues.extend(check_banned_words(pack))
     all_issues.extend(check_structure(pack))
     all_issues.extend(check_visual_duplication(pack))
+    all_issues.extend(check_pacing_sanity(pack))
     all_issues.extend(check_stale_memes(pack))
     all_issues.extend(check_emotional_keyword_saturation(pack))
 

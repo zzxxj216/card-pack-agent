@@ -77,6 +77,97 @@ def load_for_pack(pack_id: str) -> list[dict]:
     return [e for e in load_all() if e.get("pack_id") == pack_id]
 
 
+def rejected_pack_ids() -> set[str]:
+    """Pack ids whose LATEST pack-level event is pack_reject."""
+    events = load_all()  # already sorted newest first
+    seen: set[str] = set()
+    rejected: set[str] = set()
+    for e in events:
+        if not e.get("event", "").startswith("pack_"):
+            continue
+        pid = e.get("pack_id")
+        if not pid or pid in seen:
+            continue
+        seen.add(pid)
+        if e["event"] == "pack_reject":
+            rejected.add(pid)
+    return rejected
+
+
+def card_reject_penalties() -> dict[str, float]:
+    """Pack id → retrieval score multiplier (0.3-1.0) based on how many cards
+    were human-rejected. More rejects → lower multiplier."""
+    events = load_all()
+    latest_by_card: dict[tuple[str, int], dict] = {}
+    for e in events:
+        if not e.get("event", "").startswith("card_"):
+            continue
+        pos = e.get("position")
+        pid = e.get("pack_id")
+        if pid is None or pos is None:
+            continue
+        k = (pid, pos)
+        if k not in latest_by_card:  # load_all is newest-first, so first wins
+            latest_by_card[k] = e
+    rejects_per_pack: dict[str, int] = {}
+    for (pid, _), e in latest_by_card.items():
+        if e.get("event") == "card_reject":
+            rejects_per_pack[pid] = rejects_per_pack.get(pid, 0) + 1
+    return {
+        pid: max(0.3, 1.0 - n / 50.0)
+        for pid, n in rejects_per_pack.items()
+    }
+
+
+def rejection_reasons_for_packs(
+    pack_ids: list[str],
+    limit: int = 10,
+) -> list[dict]:
+    """Reject events (pack + card) with non-empty reasons, for the given packs.
+    Newest first."""
+    wanted = {str(p) for p in pack_ids}
+    out = [
+        e for e in load_all()
+        if e.get("pack_id") in wanted
+        and e.get("event") in ("pack_reject", "card_reject")
+        and e.get("reason")
+    ]
+    return out[:limit]
+
+
+def recent_avoid_hints(
+    pack_ids: list[str] | None = None,
+    limit: int = 8,
+    include_card_rejects: bool = True,
+) -> list[str]:
+    """Return a deduped list of rejection reasons (newest first), optionally
+    scoped to a specific list of pack_ids. Each string is bare reason text,
+    trimmed to 160 chars, with a [pack reject] / [card reject #N] prefix."""
+    wanted = {str(p) for p in pack_ids} if pack_ids else None
+    seen_reasons: set[str] = set()
+    out: list[str] = []
+    for e in load_all():
+        event = e.get("event", "")
+        if not event.startswith("pack_") and not (include_card_rejects and event.startswith("card_")):
+            continue
+        if event not in ("pack_reject", "card_reject"):
+            continue
+        if wanted is not None and e.get("pack_id") not in wanted:
+            continue
+        reason = (e.get("reason") or "").strip()
+        if not reason:
+            continue
+        key = reason.lower()
+        if key in seen_reasons:
+            continue
+        seen_reasons.add(key)
+        tag = "pack reject" if event == "pack_reject" else f"card reject #{e.get('position')}"
+        out.append(f"[{tag}] {reason[:160]}")
+        if len(out) >= limit:
+            break
+    return out
+
+
 def summary_for_pack(pack_id: str) -> dict:
     """Aggregate: pack-level verdict + per-card rejections."""
     events = load_for_pack(pack_id)

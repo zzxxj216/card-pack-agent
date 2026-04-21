@@ -1,7 +1,9 @@
 # Category Playbook: Trending Event
 
 **L1**: `trending_event`
-**Status**: v0.1 — Initial English draft. Zero data.
+**Status**: v0.2 — Minimal scaffold. Unverified mechanism recipes, visual
+notes, and open-question speculation removed. Mechanism selection is now
+topic-driven.
 **Validation progress**: 0 / 30 packs
 
 ---
@@ -48,80 +50,7 @@ If we can't ship inside the window, reclassify to `emotional` /
 
 ---
 
-## 3. Success patterns (principle-derived)
-
-### 3.1 Contrast twist (`contrast_twist`)
-
-**When to use**: one moment that looked like A turned out to be B
-
-**Visual recipe**:
-- First half: visual language of the expected framing
-- Reversal card: strongest single-frame hit (stark cut / high contrast /
-  text-led)
-- Second half: the "real" framing
-
-**Copy**:
-- Hook: "everyone thought X happened. look again."
-- Avoid sensational "you won't believe..." — reads like clickbait
-
-**Pacing (50 cards)**:
-- 1-25: setup (A framing)
-- 26-30: reversal node (strongest)
-- 31-50: new framing unfolds + close
-
-### 3.2 Aphorism / lesson (`aphorism_lesson`)
-
-**When to use**: the event lends itself to a reusable takeaway
-
-**Visual recipe**:
-- Type-led: strong headline cards
-- Mix of evidence frames (from the event) + typographic cards
-
-**Copy**:
-- One insight per card, max
-- Avoid preaching. Let the event carry the evidence.
-- Close: one-line takeaway, soft CTA
-
-### 3.3 Conflict tension (`conflict_tension`)
-
-**When to use**: the event exposes a contradiction (expectation vs reality,
-establishment vs outsider, hype vs substance)
-
-**Visual recipe**:
-- Split / juxtaposition
-- Use color to encode the two sides
-
-**Copy**:
-- Parallel phrasing
-- Let viewers take their own side — don't preach
-
-### 3.4 Resonance + healing (`resonance_healing`)
-
-**When to use**: a collective emotional moment (a beloved public figure's
-kind gesture, a team's underdog win, a communal celebration)
-
-**Visual recipe**:
-- Warm palette
-- Single-object or single-person close-ups
-- Less grid, more breathing room
-
-**Copy**:
-- "you were all feeling it too"
-- Lean into the shared reality; don't try to explain it
-
----
-
-## 4. Mechanisms to avoid on this L1
-
-- `blessing_ritual` — reads as opportunistic for events
-- `utility_share` — extremely hard to pull off for news; mostly gets flagged
-  as commercialization
-- `regret_sting` — only appropriate for genuine loss; if used outside
-  memorial contexts it reads exploitative
-
----
-
-## 5. Category-specific taboos
+## 3. Category-specific taboos
 
 1. **No "how to monetize this trend" openers** — reads crass fast
 2. **No speculation** presented as fact; use "according to X..." framing
@@ -137,35 +66,9 @@ kind gesture, a team's underdog win, a communal celebration)
 
 ---
 
-## 6. Visual notes
-
-- Don't use unlicensed photos of involved parties as hero frames;
-  use illustration / abstracted imagery / type-driven cards
-- Event footage: only use if public-domain / fair-use; our account does not
-  host ripped material
-- Typographic cards are often the strongest hook for this L1 because the
-  audience needs context fast
-
----
-
-## 7. Open questions
-
-- [ ] Optimal card count for trending packs — is 50 still right, or should
-      we ship shorter (30-35) for faster hit-rate?
-- [ ] Do trending packs benefit from voiceover more than festival packs?
-- [ ] How much does the decay curve differ by event type (awards vs sports
-      vs pop culture)?
-
----
-
-## 8. Historical experience (merged from `experience_log`, empty for now)
-
-_Currently empty._
-
----
-
 ## Changelog
 
 | Date | Version | Change |
 |---|---|---|
 | 2026-04-19 | v0.1 | Initial English draft |
+| 2026-04-21 | v0.2 | Removed unverified §3 success-pattern recipes, §4 mechanism-avoidance claims, §6 visual notes, §7 open questions; kept only scope, decay-curve operational rules, and taboos |

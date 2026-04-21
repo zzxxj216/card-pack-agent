@@ -93,31 +93,100 @@
   <section>
     <h2>Strategy</h2>
     <dl class="kv">
-      <dt>L1 / L2</dt>
-      <dd>{{ strategy.classification.l1 }} / {{ strategy.classification.l2 }}</dd>
-      <dt>L3</dt>
+      <dt>classification</dt>
+      <dd>
+        <code>{{ strategy.classification.l1 }}</code> / <code>{{ strategy.classification.l2 }}</code>
+        {% if data.hint_l1 or data.hint_l2 %}
+          <span class="small" style="color: var(--muted);">
+            (hint: {{ data.hint_l1 or '—' }} / {{ data.hint_l2 or '—' }})
+          </span>
+        {% endif %}
+      </dd>
+      {% if strategy.classification.l3 %}
+      <dt>L3 tags</dt>
       <dd>{{ strategy.classification.l3 | join(', ') }}</dd>
-      <dt>tier target</dt>
-      <dd>{{ strategy.tier_target }}</dd>
-      <dt>hook type</dt>
-      <dd>{{ strategy.narrative.hook_type if strategy.narrative else '—' }}</dd>
-      <dt>narrative arc</dt>
-      <dd>{{ strategy.narrative.narrative_arc if strategy.narrative else '—' }}</dd>
-      <dt>pacing</dt>
-      <dd>{{ strategy.narrative.pacing_note if strategy.narrative else '—' }}</dd>
-      <dt>palette</dt>
-      <dd>{{ strategy.visual_style.palette | join(', ') if strategy.visual_style else '—' }}</dd>
-      <dt>main subject</dt>
-      <dd>{{ strategy.visual_style.main_subject if strategy.visual_style else '—' }}</dd>
+      {% endif %}
+      {% if strategy.classification.reasoning %}
+      <dt>reasoning</dt>
+      <dd class="small">{{ strategy.classification.reasoning }}</dd>
+      {% endif %}
+
+      <dt>cards × segments</dt>
+      <dd>{{ strategy.structure.total_cards }} cards / {{ strategy.structure.segments | length }} segment(s)</dd>
+
+      {% if strategy.copy_direction %}
       <dt>tone</dt>
-      <dd>{{ strategy.copy_rules.tone if strategy.copy_rules else '—' }}</dd>
+      <dd>{{ strategy.copy_direction.tone }}</dd>
+      <dt>text density</dt>
+      <dd><code>{{ strategy.copy_direction.text_density }}</code></dd>
+      <dt>pronoun</dt>
+      <dd><code>{{ strategy.copy_direction.pronoun }}</code></dd>
+      <dt>hook type</dt>
+      <dd>{{ strategy.copy_direction.hook_type }}</dd>
+      {% if strategy.copy_direction.cta %}
+      <dt>CTA</dt>
+      <dd>
+        <span class="pill">{{ strategy.copy_direction.cta.intensity }}</span>
+        {{ strategy.copy_direction.cta.example }}
+      </dd>
+      {% endif %}
+      {% endif %}
+
+      {% if strategy.visual_direction %}
+      <dt>main subject</dt>
+      <dd>{{ strategy.visual_direction.main_subject }}</dd>
+      <dt>palette</dt>
+      <dd class="palette">
+        {% for hex in strategy.visual_direction.palette %}
+          <span class="swatch" style="background: {{ hex }};" title="{{ hex }}"></span><code>{{ hex }}</code>
+        {% endfor %}
+      </dd>
+      <dt>style anchor</dt>
+      <dd class="small">{{ strategy.visual_direction.style_anchor }}</dd>
+      <dt>composition</dt>
+      <dd class="small">{{ strategy.visual_direction.composition_note }}</dd>
+      {% endif %}
+
+      {% if strategy.script_hint %}
+      <dt>narrative arc</dt>
+      <dd class="small">{{ strategy.script_hint.narrative_arc }}</dd>
+      <dt>pacing</dt>
+      <dd class="small">{{ strategy.script_hint.pacing_note }}</dd>
+      {% endif %}
+
+      {% if strategy.avoid %}
       <dt>avoid</dt>
-      <dd>{{ strategy.copy_rules.avoid | join(' / ') if strategy.copy_rules and strategy.copy_rules.avoid else '—' }}</dd>
+      <dd>
+        <ul style="margin: 0; padding-left: 16px;">
+          {% for a in strategy.avoid %}<li class="small">{{ a }}</li>{% endfor %}
+        </ul>
+      </dd>
+      {% endif %}
+
+      {% if strategy.referenced_cases %}
+      <dt>referenced</dt>
+      <dd>
+        {% for rc in strategy.referenced_cases %}
+          <span class="pill">{{ (rc.pack_id or rc.case_id or '?')[:8] }}{% if rc.score %} · {{ "%.2f"|format(rc.score) }}{% endif %}</span>
+        {% endfor %}
+      </dd>
+      {% endif %}
     </dl>
-    {% if strategy.reasoning %}
-      <p class="small" style="margin-top: 10px; color: var(--muted);">
-        <strong>reasoning:</strong> {{ strategy.reasoning }}
-      </p>
+
+    {% if strategy.structure.segments %}
+    <h3 style="margin-top: 14px;">Segments</h3>
+    <table>
+      <thead><tr><th>range</th><th>role</th><th>notes</th></tr></thead>
+      <tbody>
+        {% for seg in strategy.structure.segments %}
+        <tr>
+          <td class="small"><code>{{ seg.range[0] }}–{{ seg.range[1] }}</code></td>
+          <td><span class="pill">{{ seg.role }}</span></td>
+          <td class="small">{{ seg.notes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     {% endif %}
   </section>
 
@@ -130,15 +199,22 @@
         {% if report.verdict == "pass" %}<span class="pill good">pass</span>
         {% else %}<span class="pill bad">{{ report.verdict }}</span>{% endif %}
       </dd>
-      <dt>hard failures</dt>
+      <dt>issues ({{ report.issues | length }})</dt>
       <dd>
         {% if report.issues %}
-          <ul style="margin: 0; padding-left: 18px;">
+          <div>
             {% for i in report.issues %}
-            <li class="small"><strong>{{ i.code }}</strong>: {{ i.message }}</li>
+            <div class="issue-row">
+              <span class="pill {% if i.severity == 'fail' %}bad{% elif i.severity == 'warn' %}warn{% endif %}">{{ i.severity }}</span>
+              <code class="small">{{ i.code }}</code>
+              <div class="small">
+                {{ i.message }}
+                {% if i.location %}<span style="color: var(--muted);"> — {{ i.location }}</span>{% endif %}
+              </div>
+            </div>
             {% endfor %}
-          </ul>
-        {% else %}—{% endif %}
+          </div>
+        {% else %}<span class="pill good">no issues</span>{% endif %}
       </dd>
     </dl>
 
@@ -283,23 +359,65 @@
 </section>
 
 <section>
-  <h2>Script ({{ pack.script.shots | length }} shots · {{ pack.script.total_duration_s }}s)</h2>
-  {% if pack.script.bgm_suggestion %}
-  <p class="small">
-    <strong>BGM:</strong> {{ pack.script.bgm_suggestion.mood }} — {{ pack.script.bgm_suggestion.reference }}
+  {% set n_shots = pack.script.shots | length %}
+  {% set total_dur = pack.script.total_duration_s %}
+  {% set avg_dur = (total_dur / n_shots) if n_shots else 0 %}
+  {% set pacing_bad = n_shots > 0 and (avg_dur < 0.6 or avg_dur > 2.5) %}
+  <h2>
+    Script
+    <span class="pill">{{ n_shots }} shots</span>
+    <span class="pill {% if pacing_bad %}bad{% endif %}">{{ "%.1f"|format(total_dur) }}s total · avg {{ "%.2f"|format(avg_dur) }}s</span>
+    {% if pack.script.has_voiceover %}<span class="pill">voiceover</span>{% endif %}
+  </h2>
+
+  {% if pacing_bad %}
+  <p class="small" style="color: var(--bad);">
+    pacing flag: avg shot duration outside [0.6s, 2.5s]. Likely the 3.0s-total LLM miscomprehension bug; see `check_pacing_sanity`.
   </p>
   {% endif %}
-  <details>
-    <summary class="small" style="cursor: pointer;">shot list (click)</summary>
+
+  <dl class="kv">
+    {% if pack.script.bgm_suggestion %}
+    <dt>BGM mood</dt>
+    <dd>{{ pack.script.bgm_suggestion.mood }}</dd>
+    <dt>BGM reference</dt>
+    <dd class="small">{{ pack.script.bgm_suggestion.reference }}</dd>
+    {% if pack.script.bgm_suggestion.tempo_curve %}
+    <dt>tempo curve</dt>
+    <dd class="small">{{ pack.script.bgm_suggestion.tempo_curve }}</dd>
+    {% endif %}
+    {% endif %}
+  </dl>
+
+  {% if pack.script.key_moments %}
+  <h3 style="margin-top: 14px;">Key moments ({{ pack.script.key_moments | length }})</h3>
+  <table>
+    <thead><tr><th>#</th><th>role</th><th>craft note</th></tr></thead>
+    <tbody>
+      {% for km in pack.script.key_moments %}
+      <tr>
+        <td class="small">{{ km.position }}</td>
+        <td><span class="pill">{{ km.role }}</span></td>
+        <td class="small">{{ km.craft_note }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <details style="margin-top: 14px;">
+    <summary class="small" style="cursor: pointer;">shot list ({{ n_shots }})</summary>
     <table style="margin-top: 10px;">
-      <thead><tr><th>#</th><th>dur</th><th>transition</th><th>notes</th></tr></thead>
+      <thead><tr><th>#</th><th>dur</th><th>notes</th><th>overlay</th></tr></thead>
       <tbody>
         {% for s in pack.script.shots %}
         <tr>
           <td class="small">{{ s.position }}</td>
-          <td class="small">{{ s.duration_s }}s</td>
-          <td class="small">{{ s.transition or '—' }}</td>
-          <td class="small">{{ (s.notes or '')[:120] }}</td>
+          <td class="small {% if s.duration_s < 0.6 or s.duration_s > 2.5 %}pill bad{% endif %}">{{ "%.2f"|format(s.duration_s) }}s</td>
+          <td class="small">{{ (s.notes or '')[:160] }}</td>
+          <td class="small">
+            {% if s.text_overlay %}{{ s.text_overlay.content }}{% else %}—{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

@@ -45,26 +45,12 @@ narrative notes produced by agents must be in English.
 
 ## 3. Narrative pacing
 
-### 3.1 Golden structure for a 50-card pack
-
-```
-[ 1-3  ]  Hook cards: pose a question / prick a pain / flip an expectation
-[ 4-8  ]  Setup 1: plant emotion or scene
-[ 9-20 ]  Setup 2: concrete detail / evidence / scene shifts
-[21-35 ]  Peak: core claim / deepest emotion / strongest visual
-[36-45 ]  Turn / reflect / deepen
-[46-50 ]  Close: resolve / CTA / silence
-```
-
-Card counts are not fixed. Short packs (20-30) or long packs (80+) scale
-proportionally.
-
-### 3.2 Negative space
+### 3.1 Negative space
 - At least 20% of cards should be "breathing" cards: less copy, slower beat,
   visual breathing room
 - Do not punch an opinion on all 50 cards; viewers fatigue fast
 
-### 3.3 Hook intensity
+### 3.2 Hook intensity
 Hook cards must satisfy **at least one** of:
 - Counter-intuitive: overturns a common expectation
 - Emotional prick: hits a universal regret / pain
@@ -110,21 +96,7 @@ Over-emotion signals (Evaluator should warn):
 
 ---
 
-## 6. CTA usage
-
-| Mechanism | CTA intensity | Example |
-|---|---|---|
-| `resonance_healing` | `soft` | "ever had a night like this?" |
-| `regret_sting` | `none` / `soft` | silence, or "tell me in the comments" |
-| `contrast_twist` | `soft` | "the last card hit different" |
-| `blessing_ritual` | `soft` | "send this to someone who needs it" |
-| `utility_share` | `hard` | "save this / share with them" |
-| `aphorism_lesson` | `soft` | "agree? drop a 1" |
-| `conflict_tension` | `none` | leave silence; let viewers argue |
-
----
-
-## 7. AI image generation — baseline
+## 6. AI image generation — baseline
 
 ### 7.1 Output format: stickers, not scenes
 
@@ -177,3 +149,4 @@ Required composition for every `prompt`:
 |---|---|---|
 | 2026-04-17 | v0.1 | Initial CN version |
 | 2026-04-19 | v0.2 | Full English rewrite; audience shifted to overseas TikTok |
+| 2026-04-21 | v0.3 | Removed old §3.1 pacing prescription (unverified, competed with planner schema) and old §6 per-mechanism CTA table (was hard-biasing planner to pick CTA intensity by L2); renumbered §3.2→§3.1, §3.3→§3.2, §7→§6 |

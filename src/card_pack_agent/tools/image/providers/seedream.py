@@ -18,6 +18,7 @@ first invoice). Set explicit override via GenerationParams.extra["cost_override"
 """
 from __future__ import annotations
 
+import math
 import time
 from typing import Any
 
@@ -60,15 +61,24 @@ class SeedreamProvider(ImageProvider):
             if params.width and params.height
             else aspect_to_wh(params.aspect_ratio)
         )
-        # seedream requires at least 3686400 pixels (1920x1920)
-        if w * h < 3686400:
-            w, h = max(w, 1920), max(h, 1920)
+        # seedream requires at least 3686400 pixels. Scale proportionally so
+        # aspect ratio (e.g. 9:16) is preserved; snap to multiples of 16.
+        MIN_PIXELS = 3686400
+        if w * h < MIN_PIXELS:
+            scale = math.sqrt(MIN_PIXELS / (w * h))
+            w = math.ceil(w * scale / 16) * 16
+            h = math.ceil(h * scale / 16) * 16
 
         payload: dict[str, Any] = {
             "prompt": params.prompt,
             "size": f"{w}x{h}",
             "watermark": bool(params.extra.get("watermark", False)),
         }
+        # Pass scene-suppression tokens. Without this seedream ignores our
+        # "no floor, no wall, no room" anti-scene directives entirely and
+        # produces full-environment photos instead of stickers.
+        if params.negative_prompt:
+            payload["negative_prompt"] = params.negative_prompt
         # Only include image field when reference images are provided
         ref_images = params.extra.get("image", [])
         if ref_images:

@@ -74,6 +74,12 @@ in English. JSON field names, enum values, and hex colors stay as-is.
 
 ---
 
+# Recent human rejections (what reviewers shot down — avoid these patterns)
+
+{recent_rejections}
+
+---
+
 # Output contract
 
 You must output ONE of two shapes:
@@ -89,17 +95,31 @@ Do not output both. Do not mix.
 
 ## Output Schema (strategy_doc)
 
+Allowed enum values (enum order is arbitrary — do NOT default to the first
+option and do NOT copy whatever value the example below happens to show):
+- `classification.l1` ∈ {{festival, trending_event, emotional, knowledge, character, relationship, growth}}
+- `classification.l2` ∈ {{resonance_healing, regret_sting, contrast_twist, blessing_ritual, utility_share, aphorism_lesson, conflict_tension}}
+- `structure.segments[].role` ∈ {{hook, setup, development, turn, close}}
+- `copy_direction.cta.intensity` ∈ {{none, soft, hard}}
+
+For L2 specifically: evaluate ALL 7 mechanisms against the topic before
+committing. Different topics of the same L1 should land on different L2s
+depending on tone, audience shape, and what the topic itself rewards —
+there is no global preferred mechanism per L1.
+
 Emit exactly this JSON structure. Field names are fixed — do not rename,
-omit, or add fields.
+omit, or add fields. In the example below, `<angle-bracketed>` strings are
+PLACEHOLDERS — replace them with a concrete choice; never emit the literal
+placeholder text.
 
 ```json
 {{
   "version": "1.0",
   "topic": "verbatim topic text (string)",
   "classification": {{
-    "l1": "festival",
-    "l2": "resonance_healing",
-    "l3": ["palette:warm", "text:minimal", ...],
+    "l1": "<one of the l1 enum values, picked on topic merit>",
+    "l2": "<one of the l2 enum values, picked after considering all 7>",
+    "l3": ["palette:<warm|cool|neutral>", "text:<minimal|medium|dense>", ...],
     "reasoning": "why this classification (1-2 sentences)"
   }},
   "referenced_cases": [],
@@ -171,6 +191,10 @@ Input type: {input_type}
 Extra context:
 {extra_context}
 
+# Operator classification hints
+
+{operator_hints}
+
 # Retrieved similar high-scoring cases
 
 {retrieved_cases}
@@ -220,15 +244,42 @@ def plan(
     )
     recent = knowledge.recent_experiences_summary(max_files=2)
 
+    from .. import feedback as feedback_mod
+    reject_hints = feedback_mod.recent_avoid_hints(limit=6)
+    rejections_block = (
+        "\n".join(f"- {h}" for h in reject_hints)
+        if reject_hints
+        else "(no human rejections recorded yet)"
+    )
+
     system = SYSTEM_PROMPT_TEMPLATE.format(
         global_context=knowledge.global_context(),
         category_playbook=category_md,
         recent_experiences=recent,
+        recent_rejections=rejections_block,
     )
+    hint_lines = []
+    if hint_l1:
+        hint_lines.append(f"- L1 hint: `{hint_l1}` (operator-specified content domain)")
+    if hint_l2:
+        hint_lines.append(f"- L2 hint: `{hint_l2}` (operator-specified narrative mechanism)")
+    if hint_lines:
+        operator_hints = (
+            "\n".join(hint_lines)
+            + "\n\nHonor these hints unless the topic is clearly incompatible. "
+            "If overriding, justify in `classification.reasoning`."
+        )
+    else:
+        operator_hints = (
+            "(no operator hints — evaluate all L1 and L2 enum values on topic "
+            "merit; do not default to any single mechanism)"
+        )
+
     user = USER_PROMPT_TEMPLATE.format(
         raw_topic=topic_input.raw_topic,
         input_type=topic_input.input_type,
         extra_context=topic_input.extra_context or "(无)",
+        operator_hints=operator_hints,
         retrieved_cases=_format_retrieved(retrieved),
     )
 

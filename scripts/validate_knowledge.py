@@ -41,7 +41,6 @@ REQUIRED_PROMPT_TEMPLATES = [
 # are present.
 CATEGORY_REQUIRED_SECTION_TITLES = [
     "Scope",
-    "Success patterns",
 ]
 
 CATEGORY_TABOO_MARKERS = [

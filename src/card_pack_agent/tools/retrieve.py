@@ -1,12 +1,13 @@
 """Two-stage retrieval：先按 L2 硬过滤，再在候选集内按话题向量排序。
 
-带时间衰减。
+带时间衰减。人工否决过的 pack 被整包排除；card-level 多次否决会被打折。
 """
 from __future__ import annotations
 
 import math
 from datetime import datetime
 
+from ..feedback import card_reject_penalties, rejected_pack_ids
 from ..memory.vector import COLLECTION_TOPIC, VectorHit, embed, vector_store
 from ..schemas import L1, L2, Tier
 
@@ -42,7 +43,7 @@ def retrieve_similar_packs(
     hits = vector_store.search(
         collection=COLLECTION_TOPIC,
         vector=query_vec,
-        top_k=top_k * 3,  # over-fetch, then filter + rerank
+        top_k=top_k * 4,  # over-fetch, then filter + rerank + feedback-penalize
         payload_filter=payload_filter or None,
     )
 
@@ -51,10 +52,24 @@ def retrieve_similar_packs(
         threshold = order[tier_gte.value]
         hits = [h for h in hits if order.get(h.payload.get("tier", "bad"), 0) >= threshold]
 
+    # Stage A: exclude human-rejected packs, apply card-reject penalty.
+    # Derive pack_id from payload if present, else from the point id.
+    rejected = rejected_pack_ids()
+    penalties = card_reject_penalties()
+    filtered: list[VectorHit] = []
+    for h in hits:
+        pid = h.payload.get("pack_id") or h.id
+        if pid in rejected:
+            continue
+        penalty = penalties.get(pid, 1.0)
+        if penalty != 1.0:
+            h = VectorHit(id=h.id, score=h.score * penalty, payload=h.payload)
+        filtered.append(h)
+
     # Time decay rerank
     now = datetime.utcnow()
     reranked = []
-    for h in hits:
+    for h in filtered:
         created_at_iso = h.payload.get("created_at")
         if created_at_iso:
             try:

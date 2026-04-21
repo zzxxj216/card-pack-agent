@@ -237,6 +237,7 @@ def list_artifacts() -> list[dict]:
     """
     if not ARTIFACTS_DIR.exists():
         return []
+    from . import feedback as feedback_mod
     summaries = []
     for p in ARTIFACTS_DIR.glob("*.json"):
         try:
@@ -245,15 +246,31 @@ def list_artifacts() -> list[dict]:
             continue
         report = data.get("evaluator_report") or {}
         judge = report.get("judge_scores") or {}
+        pack = data.get("pack") or {}
+        strategy = pack.get("strategy") or {}
+        clf = strategy.get("classification") or {}
+        script = pack.get("script") or {}
+        n_shots = len(script.get("shots") or [])
+        pid = data.get("pack_id")
+
+        fb = feedback_mod.summary_for_pack(pid) if pid else {}
         summaries.append({
-            "pack_id": data.get("pack_id"),
+            "pack_id": pid,
             "topic": data.get("topic"),
             "created_at": data.get("created_at"),
             "hint_l1": data.get("hint_l1"),
             "hint_l2": data.get("hint_l2"),
+            "actual_l1": (clf.get("l1") or "").replace("L1.", "").lower() or None,
+            "actual_l2": (clf.get("l2") or "").replace("L2.", "").lower() or None,
             "verdict": report.get("verdict"),
+            "n_issues": len(report.get("issues") or []),
             "overall_score": judge.get("overall_score") or judge.get("overall"),
             "cost_usd": (data.get("cost") or {}).get("total_cost_usd"),
+            "n_cards": len(pack.get("cards") or []),
+            "n_shots": n_shots,
+            "total_duration_s": script.get("total_duration_s"),
+            "pack_verdict": fb.get("pack_verdict"),
+            "n_card_rejects": fb.get("n_card_rejects", 0),
             "path": str(p),
         })
     summaries.sort(key=lambda s: s.get("created_at") or "", reverse=True)

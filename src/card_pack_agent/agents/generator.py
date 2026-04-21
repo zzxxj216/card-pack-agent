@@ -45,7 +45,7 @@ Follow this schema exactly:
 
 ```
 {{
-  "total_duration_s": 40.0,
+  "total_duration_s": <sum of all shot.duration_s values, in seconds>,
   "bgm_suggestion": {{
     "mood": "ambient calm",
     "reference": "lo-fi piano, soft ambient",
@@ -71,7 +71,11 @@ Follow this schema exactly:
 
 - `shots` count must equal the number of cards
 - `position` is 1-indexed and continuous
-- `duration_s`: hook cards 0.8-1.2s, normal cards 1.2-2.0s
+- `duration_s` is the on-screen time for ONE card in **seconds** (not ms, not a fraction of the total).
+  Hard range: every shot MUST be between 0.8 and 2.0 seconds.
+  Typical: hook cards 0.8-1.2s, normal cards 1.2-2.0s.
+- `total_duration_s` MUST equal the arithmetic sum of every `shot.duration_s`.
+  For a 50-card pack this is roughly 50 × ~1.5s ≈ 75s; it is NEVER < 20s.
 - Keep `shot.notes` empty (`""`) for every non-key_moment shot to stay within
   token budget. Only key_moments carry a `craft_note`.
 """
@@ -136,6 +140,26 @@ def generate_script(
                     got=len(script.shots), expected=n_cards)
         # Pad or trim so downstream Evaluator can still run
         script.shots = script.shots[:n_cards]
+
+    # Clamp per-shot durations into the [0.8, 2.0] band and recompute total.
+    # LLM occasionally emits sub-0.1s shots (misinterprets seconds as fraction
+    # of total or as ms) which makes pacing unusable.
+    SHOT_MIN, SHOT_MAX = 0.8, 2.0
+    repaired = 0
+    for shot in script.shots:
+        if shot.duration_s < SHOT_MIN or shot.duration_s > SHOT_MAX:
+            repaired += 1
+            shot.duration_s = max(SHOT_MIN, min(SHOT_MAX, shot.duration_s))
+    new_total = round(sum(s.duration_s for s in script.shots), 2)
+    if repaired or abs(new_total - script.total_duration_s) > 0.5:
+        log.warning(
+            "generator.script.duration_repaired",
+            clamped_shots=repaired,
+            old_total=script.total_duration_s,
+            new_total=new_total,
+            n_shots=len(script.shots),
+        )
+        script.total_duration_s = new_total
 
     log.info("generator.script.done",
              shots=len(script.shots),

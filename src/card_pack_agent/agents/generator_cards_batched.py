@@ -37,6 +37,12 @@ English. The image `prompt` field is already English by convention.
 
 ---
 
+# Recent human rejections in this category (avoid repeating these mistakes)
+
+{recent_rejections}
+
+---
+
 # Output rules
 
 - Output a raw JSON array. No markdown fence, no prose before or after.
@@ -46,7 +52,7 @@ English. The image `prompt` field is already English by convention.
 {{
   "position": 1,
   "segment": "hook",
-  "prompt": "film photography, 35mm, ... full English image prompt",
+  "prompt": "die-cut sticker of <subject>, isolated on plain off-white background, <details>, <palette>, <style_anchor>, <lighting>",
   "negative_prompt": "text, watermark, logo, typography, ...",
   "composition_note": "English composition note",
   "text_overlay_hint": {{
@@ -71,16 +77,27 @@ Every card is a **sticker** that a TikTok viewer pastes into their own video.
 It is never a scene or a photograph of an environment.
 
 - Every `prompt` must describe ONE focal subject (or a tight subject cluster)
-  centered on a plain, near-uniform, near-white background. Include at least
-  one of these isolation phrases verbatim: `die-cut sticker`,
-  `isolated on plain off-white background`, `product-photo isolation`,
-  `subject centered on clean light backdrop`.
+  centered on a plain, near-uniform, near-white background.
+- PROMPT ORDER IS LOAD-BEARING. Image models weight the first ~30 tokens
+  heaviest. Begin EVERY prompt with the verbatim prefix
+  `die-cut sticker of <subject>, isolated on plain off-white background,`
+  and ONLY THEN describe details, colors, style_anchor, lighting. Do not
+  bury the sticker framing in the middle or at the end of the prompt —
+  that is the #1 cause of the model reverting to a scene composition.
 - The subject must have ~8-12% clear margin on all sides.
 - Do NOT describe any scene, environment, interior, exterior, landscape,
   room, floor, wall, furniture, table, surface, horizon, shelf, window,
   ground, "resting on X", or "placed on Y". If the concept feels like it
   needs two objects interacting, describe them as a floating subject group
   on a plain backdrop, not connected by environment.
+- BANNED placement phrasing (do not use any of these, even for single
+  objects): `resting on`, `placed on`, `sitting on`, `lying on`, `leaning
+  against`, `propped on`, `on top of`, `on a <surface>`, `on the <surface>`.
+  For multi-object compositions, use `with`, `and`, `alongside`, or
+  `floating together` instead. Example: write
+  "reading glasses with a folded paperback, floating together, die-cut
+  sticker, isolated on plain off-white background" — NOT
+  "reading glasses resting on a paperback".
 - Aesthetic direction from `style_anchor` (e.g. film grain, 35mm, watercolor)
   is a TEXTURE cue applied to the subject only — never scene framing.
   "Film photography, 35mm" => film-grain look on the isolated subject, NOT
@@ -145,10 +162,34 @@ def generate_cards_batched(
     log.info("generator.cards.batched.start",
              total=total_cards, n_segments=len(segments))
 
+    from .. import feedback as feedback_mod
+    from ..memory.postgres import case_store
+    from ..schemas import L1 as L1Enum, L2 as L2Enum
+
+    l1_val = _l1_value(strategy)
+    l2_raw = strategy.classification.l2
+    l2_val = l2_raw.value if hasattr(l2_raw, "value") else str(l2_raw)
+    try:
+        same_category = case_store.list_by_category(L1Enum(l1_val), L2Enum(l2_val), limit=20)
+        same_cat_ids = [str(c.pack_id) for c in same_category]
+    except Exception as exc:
+        log.warning("generator.cards.list_by_category_failed", error=str(exc)[:200])
+        same_cat_ids = []
+
+    reject_hints = feedback_mod.recent_avoid_hints(
+        pack_ids=same_cat_ids or None, limit=8,
+    )
+    rejections_block = (
+        "\n".join(f"- {h}" for h in reject_hints)
+        if reject_hints
+        else "(no rejections recorded for this category yet)"
+    )
+
     system = CARDS_SYSTEM_TEMPLATE.format(
         global_style_guide=knowledge.global_style_guide(),
-        category_playbook=knowledge.for_category(_l1_value(strategy)),
+        category_playbook=knowledge.for_category(l1_val),
         anti_patterns=knowledge.global_anti_patterns(),
+        recent_rejections=rejections_block,
     )
 
     all_cards: list[CardPrompt] = []
