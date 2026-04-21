@@ -362,17 +362,17 @@
   {% set n_shots = pack.script.shots | length %}
   {% set total_dur = pack.script.total_duration_s %}
   {% set avg_dur = (total_dur / n_shots) if n_shots else 0 %}
-  {% set pacing_bad = n_shots > 0 and (avg_dur < 0.6 or avg_dur > 2.5) %}
+  {% set pacing_bad = n_shots > 0 and (avg_dur < 1.0 or avg_dur > 3.0 or total_dur > 15.5 or n_shots < 5 or n_shots > 11) %}
   <h2>
-    Script
-    <span class="pill">{{ n_shots }} shots</span>
-    <span class="pill {% if pacing_bad %}bad{% endif %}">{{ "%.1f"|format(total_dur) }}s total · avg {{ "%.2f"|format(avg_dur) }}s</span>
+    Script (teaser, &le;15s)
+    <span class="pill {% if n_shots < 6 or n_shots > 10 %}warn{% endif %}">{{ n_shots }} shots</span>
+    <span class="pill {% if pacing_bad %}bad{% endif %}">{{ "%.1f"|format(total_dur) }}s total &middot; avg {{ "%.2f"|format(avg_dur) }}s</span>
     {% if pack.script.has_voiceover %}<span class="pill">voiceover</span>{% endif %}
   </h2>
 
   {% if pacing_bad %}
   <p class="small" style="color: var(--bad);">
-    pacing flag: avg shot duration outside [0.6s, 2.5s]. Likely the 3.0s-total LLM miscomprehension bug; see `check_pacing_sanity`.
+    pacing flag: teaser should be 6-10 shots, each 1.0-2.5s, total &le;15s. See `check_pacing_sanity`.
   </p>
   {% endif %}
 
@@ -413,7 +413,7 @@
         {% for s in pack.script.shots %}
         <tr>
           <td class="small">{{ s.position }}</td>
-          <td class="small {% if s.duration_s < 0.6 or s.duration_s > 2.5 %}pill bad{% endif %}">{{ "%.2f"|format(s.duration_s) }}s</td>
+          <td class="small {% if s.duration_s < 1.0 or s.duration_s > 2.5 %}pill bad{% endif %}">{{ "%.2f"|format(s.duration_s) }}s</td>
           <td class="small">{{ (s.notes or '')[:160] }}</td>
           <td class="small">
             {% if s.text_overlay %}{{ s.text_overlay.content }}{% else %}—{% endif %}

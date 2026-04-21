@@ -119,11 +119,24 @@ def check_structure(pack: Pack) -> list[EvaluatorIssue]:
             severity=EvaluatorVerdict.FAIL,
             message="card positions must be 1..N sequential",
         ))
-    if len(pack.script.shots) != actual:
+    # Script is a teaser subset — shots reference real card positions but
+    # do NOT need to cover all cards. Validate the subset property instead.
+    card_positions = set(positions)
+    shot_positions = [s.position for s in pack.script.shots]
+    invalid = [p for p in shot_positions if p not in card_positions]
+    if invalid:
         issues.append(EvaluatorIssue(
-            code="script_shot_count_mismatch",
+            code="script_shot_position_invalid",
             severity=EvaluatorVerdict.FAIL,
-            message=f"script has {len(pack.script.shots)} shots, expected {actual}",
+            message=f"{len(invalid)} shots reference non-existent card positions",
+            location=f"shots:{invalid[:10]}",
+        ))
+    if len(shot_positions) != len(set(shot_positions)):
+        dups = [p for p in shot_positions if shot_positions.count(p) > 1]
+        issues.append(EvaluatorIssue(
+            code="script_shot_position_duplicate",
+            severity=EvaluatorVerdict.FAIL,
+            message=f"duplicate shot positions: {sorted(set(dups))[:10]}",
         ))
     return issues
 
@@ -154,17 +167,34 @@ def check_visual_duplication(pack: Pack, max_near_duplicates: int = 3) -> list[E
 
 
 def check_pacing_sanity(pack: Pack) -> list[EvaluatorIssue]:
-    """Flag scripts with unusable pacing.
+    """Flag teaser scripts with unusable pacing.
 
-    Even with the generator's clamp-repair in place, the evaluator should fail
-    packs whose shot durations land outside a sane viewing band, so we catch
-    any future regression (or hand-authored broken script) at the gate.
+    The script is a 6-10 shot teaser capped at 15s total. Bands are tightened
+    versus the generator clamp to catch regressions: we fail anything outside
+    [0.9, 3.0]s per shot, outside [5, 11] shots, or over 15.5s total.
     """
-    SHOT_MIN, SHOT_MAX = 0.6, 2.5
+    SHOT_MIN, SHOT_MAX = 0.9, 3.0
+    SHOTS_MIN, SHOTS_MAX = 5, 11
+    TOTAL_MAX = 15.5
     issues: list[EvaluatorIssue] = []
     shots = pack.script.shots
     if not shots:
+        issues.append(EvaluatorIssue(
+            code="script_no_shots",
+            severity=EvaluatorVerdict.FAIL,
+            message="script has zero shots",
+        ))
         return issues
+
+    if len(shots) < SHOTS_MIN or len(shots) > SHOTS_MAX:
+        issues.append(EvaluatorIssue(
+            code="script_shot_count_out_of_range",
+            severity=EvaluatorVerdict.FAIL,
+            message=(
+                f"script has {len(shots)} shots; "
+                f"teaser expects [{SHOTS_MIN}, {SHOTS_MAX}]"
+            ),
+        ))
 
     bad = [s for s in shots if s.duration_s < SHOT_MIN or s.duration_s > SHOT_MAX]
     if bad:
@@ -187,15 +217,11 @@ def check_pacing_sanity(pack: Pack) -> list[EvaluatorIssue]:
             message=f"total_duration_s={total}, sum of shots={summed}",
         ))
 
-    min_expected = len(shots) * SHOT_MIN
-    if total < min_expected:
+    if total > TOTAL_MAX:
         issues.append(EvaluatorIssue(
-            code="script_total_duration_too_short",
+            code="script_total_duration_too_long",
             severity=EvaluatorVerdict.FAIL,
-            message=(
-                f"total_duration_s={total}s < min expected "
-                f"{min_expected:.1f}s for {len(shots)} shots"
-            ),
+            message=f"total_duration_s={total}s exceeds teaser cap {TOTAL_MAX}s",
         ))
     return issues
 

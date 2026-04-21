@@ -65,7 +65,7 @@
     <tbody>
       {% for p in packs %}
       {% set hint_differs = (p.hint_l1 and p.actual_l1 and p.hint_l1 != p.actual_l1) or (p.hint_l2 and p.actual_l2 and p.hint_l2 != p.actual_l2) %}
-      {% set dur_bad = p.total_duration_s is not none and p.n_shots and (p.total_duration_s / p.n_shots < 0.6 or p.total_duration_s / p.n_shots > 2.5) %}
+      {% set dur_bad = p.total_duration_s is not none and (p.total_duration_s > 15.5 or (p.n_shots and (p.total_duration_s / p.n_shots < 1.0 or p.total_duration_s / p.n_shots > 3.0))) %}
       <tr>
         <td class="small">{{ p.created_at[:19] if p.created_at else "—" }}</td>
         <td><a href="/packs/{{ p.pack_id }}">{{ p.topic or p.pack_id[:8] }}</a></td>

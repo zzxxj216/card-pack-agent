@@ -28,7 +28,11 @@ def test_end_to_end_mock_pipeline():
     assert result.pack is not None
     pack = result.pack
     assert len(pack.cards) == 50
-    assert len(pack.script.shots) == 50
+    # Script is a teaser subset (6-10 cards) referencing real card positions
+    assert 6 <= len(pack.script.shots) <= 10
+    card_positions = {c.position for c in pack.cards}
+    assert all(s.position in card_positions for s in pack.script.shots)
+    assert pack.script.total_duration_s <= 15.5
     assert all(c.position == i for i, c in enumerate(pack.cards, start=1))
 
     # Evaluator should have run and populated scores

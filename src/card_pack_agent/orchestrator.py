@@ -289,19 +289,23 @@ def _generate_and_evaluate(
     except Exception as exc:
         log.warning("orchestrator.script_fallback", error=str(exc)[:200])
         from .schemas import BGMSuggestion, Script, Shot
+        # Fallback teaser: pick 5 spread-out cards from the pack for a 15s video
+        positions_in_pack = [c.position for c in cards]
+        if positions_in_pack:
+            n = len(positions_in_pack)
+            # Evenly sampled indices across the pack
+            sample_idx = [round(i * (n - 1) / 4) for i in range(5)]
+            picks = [positions_in_pack[i] for i in sample_idx]
+            picks = sorted(set(picks))
+        else:
+            picks = []
         script = Script(
-            total_duration_s=40.0,
+            total_duration_s=round(3.0 * len(picks), 2) if picks else 0.0,
             bgm_suggestion=BGMSuggestion(
                 mood="ambient calm",
                 reference="lo-fi piano, soft ambient",
             ),
-            shots=[
-                Shot(
-                    position=c.position,
-                    duration_s=0.8 if c.position <= 3 else 1.5,
-                )
-                for c in cards
-            ],
+            shots=[Shot(position=p, duration_s=3.0) for p in picks],
         )
 
     pack = Pack(

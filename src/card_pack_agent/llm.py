@@ -255,9 +255,10 @@ _MOCK_CARDS: list[dict[str, Any]] = [
 ]
 
 
+_MOCK_SCRIPT_POSITIONS = [1, 8, 20, 30, 40, 48, 50]
 _MOCK_SCRIPT: dict[str, Any] = {
     "version": "1.0",
-    "total_duration_s": 40.0,
+    "total_duration_s": round(2.0 * len(_MOCK_SCRIPT_POSITIONS), 2),
     "bgm_suggestion": {
         "mood": "slow, warm, acoustic",
         "reference": "mock reference",
@@ -266,10 +267,10 @@ _MOCK_SCRIPT: dict[str, Any] = {
     "has_voiceover": False,
     "shots": [
         {
-            "position": i,
-            "duration_s": 2.0 if i <= 3 or i >= 46 else 0.8,
+            "position": p,
+            "duration_s": 2.0,
             "text_overlay": {
-                "content": f"mock overlay {i}",
+                "content": f"mock overlay {p}",
                 "position": "top-center",
                 "size_tier": "body",
                 "animation": "fade-in",
@@ -279,7 +280,7 @@ _MOCK_SCRIPT: dict[str, Any] = {
             "voiceover": None,
             "notes": "",
         }
-        for i in range(1, 51)
+        for p in _MOCK_SCRIPT_POSITIONS
     ],
     "key_moments": [
         {"position": 1, "role": "hook", "craft_note": "mock"},
